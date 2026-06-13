@@ -5,9 +5,9 @@ import { authenticate } from '../../../core/middlewares/authMiddleware.js';
 export const productRouter = Router();
 
 productRouter.post('/', authenticate, createProduct);
-productRouter.get('/', getProducts);
-productRouter.get('/ledger', getStockLedger);
-productRouter.get('/:id', getProductById);
+productRouter.get('/', authenticate, getProducts);
+productRouter.get('/ledger', authenticate, getStockLedger);
+productRouter.get('/:id', authenticate, getProductById);
 productRouter.put('/:id', authenticate, updateProduct);
 productRouter.delete('/:id', authenticate, deleteProduct);
 productRouter.patch('/:id/adjust-stock', authenticate, adjustStock);

@@ -128,7 +128,7 @@ function App() {
         <main className="flex-1 overflow-y-auto relative custom-scrollbar">
            <div className="max-w-6xl mx-auto p-8 lg:p-12 min-h-full">
               <Routes>
-                <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<div className="animate-in fade-in duration-500"><Outlet /></div>}>
                   <Route index element={<Dashboard />} />
                   <Route path="products" element={<Products />} />
                   <Route path="boms" element={<Boms />} />
@@ -150,14 +150,6 @@ function App() {
     </Router>
   );
 }
-
-const DashboardLayout = () => {
-  return (
-    <div className="animate-in fade-in duration-500">
-      <Outlet />
-    </div>
-  );
-};
 
 interface NavItemProps {
   to: string;

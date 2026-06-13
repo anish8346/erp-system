@@ -17,16 +17,14 @@ manufacturingRouter.patch('/work-order/:id/status', authenticate, OperationsCont
 manufacturingRouter.patch('/work-order/:id/duration', authenticate, OperationsController.updateWorkOrderDuration);
 manufacturingRouter.patch('/component/:id/consumed', authenticate, OperationsController.updateComponentConsumed);
 
-// BoM Routes (kept simple for now)
+// BoM Routes
 bomRouter.get('/', authenticate, async (req, res) => {
-    // Legacy support or basic list
-    const { OperationsRepository } = await import('../repositories/operations.repository.js');
     try {
-        const { PrismaClient } = await import('@prisma/client');
-        const prisma = new (PrismaClient as any)();
-        const boms = await prisma.boM.findMany({ include: { product: true, bomLines: { include: { component: true } }, operations: { include: { workCenter: true } } } });
+        const { OperationsRepository } = await import('../repositories/operations.repository.js');
+        const boms = await OperationsRepository.findAllBoMs();
         res.json(boms);
-    } catch (e) {
-        res.status(500).json({ error: 'Failed' });
+    } catch (error: unknown) {
+        console.error('[FetchBoMs Error]:', error);
+        res.status(500).json({ error: 'Failed to fetch Bill of Materials.' });
     }
 });

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Factory, CheckCircle2, Activity, Clock, Box, Plus, Search, ArrowLeft, User as UserIcon, ListTree, Package, Timer, XCircle } from 'lucide-react';
+import { Factory, CheckCircle2, Activity, Clock, Box, Plus, Search, ArrowLeft, User as UserIcon, ListTree, Package, Timer, XCircle, ChevronRight } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
 import type { ManufacturingOrder, Product, BoM, WorkOrder, User, MOComponent } from '../types';
 import axios from 'axios';

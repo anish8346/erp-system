@@ -93,6 +93,16 @@ export class OperationsRepository {
     });
   }
 
+  static async findAllBoMs() {
+    return await prisma.boM.findMany({
+      include: { 
+        product: true, 
+        bomLines: { include: { component: true } }, 
+        operations: { include: { workCenter: true } } 
+      }
+    });
+  }
+
   static async getMOs() {
     return await prisma.manufacturingOrder.findMany({
       include: { 
