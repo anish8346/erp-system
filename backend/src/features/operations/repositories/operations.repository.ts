@@ -1,60 +1,60 @@
-import { Prisma } from '@prisma/client';
 import prisma from '../../../core/database/prisma.js';
+import type { CreateMOData, MOStatus, WOStatus } from '../../../core/types/index.js';
 
 export class OperationsRepository {
   static async findBoMByProductId(productId: string) {
-    return await prisma.boM.findUnique({ where: { productId } });
-  }
-
-  static async deleteBoMLinesByBomId(bomId: string, tx: Prisma.TransactionClient = prisma) {
-    return await tx.boMLine.deleteMany({ where: { bomId } });
-  }
-
-  static async deleteOperationsByBomId(bomId: string, tx: Prisma.TransactionClient = prisma) {
-    return await tx.operation.deleteMany({ where: { bomId } });
-  }
-
-  static async updateBoM(id: string, data: Prisma.BoMUpdateInput, tx: Prisma.TransactionClient = prisma) {
-    return await tx.boM.update({
-      where: { id },
-      data,
-      include: { bomLines: true, operations: true },
-    });
-  }
-
-  static async createBoM(data: Prisma.BoMCreateInput, tx: Prisma.TransactionClient = prisma) {
-    return await tx.boM.create({
-      data,
-      include: { bomLines: true, operations: true },
-    });
-  }
-
-  static async updateProductBoM(productId: string, bomId: string) {
-    return await prisma.product.update({
-      where: { id: productId },
-      data: { bomId },
-    });
-  }
-
-  static async getBoMs() {
-    return await prisma.boM.findMany({
-      include: {
-        product: true,
+    return await prisma.boM.findUnique({ 
+      where: { productId },
+      include: { 
         bomLines: { include: { component: true } },
-      },
+        operations: { include: { workCenter: true } }
+      }
     });
   }
 
   static async findBoMById(id: string) {
     return await prisma.boM.findUnique({
       where: { id },
-      include: { operations: true }
+      include: { 
+        bomLines: { include: { component: true } },
+        operations: { include: { workCenter: true } }
+      }
     });
   }
 
-  static async createMO(data: Prisma.ManufacturingOrderCreateInput) {
+  static async createMO(data: CreateMOData) {
+    const { productId, quantity, bomId, assigneeId, components, workOrders } = data;
     return await prisma.manufacturingOrder.create({
-      data,
+      data: {
+        productId,
+        quantity,
+        bomId,
+        assigneeId,
+        status: 'DRAFT',
+        components: {
+          create: components?.map(c => ({
+            productId: c.productId,
+            toConsume: c.toConsume,
+            consumed: 0
+          }))
+        },
+        WorkOrders: {
+          create: workOrders?.map(w => ({
+            operationId: w.operationId,
+            operationName: w.operationName,
+            workCenterId: w.workCenterId,
+            expectedDuration: w.expectedDuration,
+            realDuration: 0,
+            status: 'PENDING'
+          }))
+        }
+      },
+      include: { 
+        product: true, 
+        bom: true, 
+        components: { include: { product: true } },
+        WorkOrders: { include: { operation: true, workCenter: true } }
+      }
     });
   }
 
@@ -62,21 +62,23 @@ export class OperationsRepository {
     return await prisma.manufacturingOrder.findUnique({
       where: { id },
       include: { 
-        bom: { include: { bomLines: { include: { component: true } } } },
-        product: true,
-        WorkOrders: true
-      },
+        product: true, 
+        bom: true, 
+        assignee: true,
+        components: { include: { product: true } },
+        WorkOrders: { include: { operation: true, workCenter: true } }
+      }
     });
   }
 
-  static async updateMO(id: string, data: Prisma.ManufacturingOrderUpdateInput, tx: Prisma.TransactionClient = prisma) {
-    return await tx.manufacturingOrder.update({
+  static async updateMOStatus(id: string, status: MOStatus) {
+    return await prisma.manufacturingOrder.update({
       where: { id },
-      data
+      data: { status }
     });
   }
 
-  static async updateWorkOrder(id: string, data: Prisma.WorkOrderUpdateInput) {
+  static async updateWorkOrder(id: string, data: { status?: WOStatus, realDuration?: number }) {
     return await prisma.workOrder.update({
       where: { id },
       data,
@@ -84,9 +86,22 @@ export class OperationsRepository {
     });
   }
 
+  static async updateComponentConsumption(id: string, consumed: number) {
+    return await prisma.mOComponent.update({
+      where: { id },
+      data: { consumed }
+    });
+  }
+
   static async getMOs() {
     return await prisma.manufacturingOrder.findMany({
-      include: { product: true, bom: true, WorkOrders: { include: { operation: { include: { workCenter: true } } } } },
+      include: { 
+        product: true, 
+        bom: true, 
+        assignee: true,
+        components: { include: { product: true } },
+        WorkOrders: { include: { operation: true, workCenter: true } }
+      },
       orderBy: { createdAt: 'desc' }
     });
   }

@@ -73,16 +73,6 @@ export interface Product {
 
 export type SalesOrderStatus = 'DRAFT' | 'CONFIRMED' | 'PARTIALLY_DELIVERED' | 'DELIVERED' | 'CANCELLED';
 
-export interface SalesOrderLine {
-  id: string;
-  salesOrderId: string;
-  productId: string;
-  quantity: number;
-  deliveredQty: number;
-  price: number;
-  product?: Product;
-}
-
 export interface SalesOrder {
   id: string;
   customerName: string;
@@ -169,27 +159,30 @@ export interface WorkCenter {
   name: string;
 }
 
-export type MOStatus = 'DRAFT' | 'CONFIRMED' | 'IN_PROGRESS' | 'DONE';
+export type MOStatus = 'DRAFT' | 'CONFIRMED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+
+export interface MOComponentData {
+  productId: string;
+  toConsume: number;
+  consumed?: number;
+}
+
+export interface MOWorkOrderData {
+  operationId?: string;
+  operationName?: string;
+  workCenterId: string;
+  expectedDuration: number;
+  realDuration?: number;
+}
 
 export interface CreateMOData {
   productId: string;
   quantity: number;
   status: MOStatus;
   bomId: string;
-}
-
-export interface CreatePOData {
-  vendorId?: string | null;
-  vendorName: string;
-  status: PurchaseOrderStatus;
-  totalAmount: number;
-  orderLines?: {
-    create: {
-      productId: string;
-      quantity: number;
-      price: number;
-    }[];
-  };
+  assigneeId?: string;
+  components?: MOComponentData[];
+  workOrders?: MOWorkOrderData[];
 }
 
 export interface ManufacturingOrder {
@@ -198,11 +191,23 @@ export interface ManufacturingOrder {
   quantity: number;
   status: MOStatus;
   bomId: string;
+  assigneeId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   product?: Product;
   bom?: BoM;
   WorkOrders?: WorkOrder[];
+  components?: MOComponent[];
+  assignee?: User | null;
+}
+
+export interface MOComponent {
+  id: string;
+  moId: string;
+  productId: string;
+  toConsume: number;
+  consumed: number;
+  product?: Product;
 }
 
 export type WOStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
@@ -210,10 +215,14 @@ export type WOStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE';
 export interface WorkOrder {
   id: string;
   moId: string;
-  operationId: string;
+  operationId?: string | null;
+  operationName?: string | null;
+  workCenterId?: string | null;
   status: WOStatus;
-  duration: number;
-  operation?: Operation;
+  expectedDuration: number;
+  realDuration: number;
+  operation?: Operation | null;
+  workCenter?: WorkCenter | null;
 }
 
 export type StockLedgerType = 'INITIAL' | 'SALE' | 'PURCHASE' | 'MFG_CONSUME' | 'MFG_PRODUCE' | 'ADJUSTMENT';

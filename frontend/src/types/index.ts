@@ -113,15 +113,28 @@ export interface BoM {
   operations?: Operation[];
 }
 
-export type MOStatus = 'DRAFT' | 'CONFIRMED' | 'IN_PROGRESS' | 'DONE';
+export type MOStatus = 'DRAFT' | 'CONFIRMED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
 export interface WorkOrder {
   id: string;
   moId: string;
-  operationId: string;
+  operationId?: string | null;
+  operationName?: string | null;
+  workCenterId?: string | null;
   status: 'PENDING' | 'IN_PROGRESS' | 'DONE';
-  duration: number;
-  operation?: Operation;
+  expectedDuration: number;
+  realDuration: number;
+  operation?: Operation | null;
+  workCenter?: WorkCenter | null;
+}
+
+export interface MOComponent {
+  id: string;
+  moId: string;
+  productId: string;
+  toConsume: number;
+  consumed: number;
+  product?: Product;
 }
 
 export interface ManufacturingOrder {
@@ -130,10 +143,13 @@ export interface ManufacturingOrder {
   quantity: number;
   status: MOStatus;
   bomId: string;
+  assigneeId?: string | null;
   createdAt: string;
   product?: Product;
   bom?: BoM;
   WorkOrders: WorkOrder[];
+  components: MOComponent[];
+  assignee?: User | null;
 }
 
 export interface StockLedger {

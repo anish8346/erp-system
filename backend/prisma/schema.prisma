@@ -19,6 +19,7 @@ model User {
   updatedAt DateTime @updatedAt
   AuditLog  AuditLog[]
   SalesOrder SalesOrder[]
+  ManufacturingOrder ManufacturingOrder[] @relation("UserToMO")
 }
 
 model Vendor {
@@ -54,6 +55,7 @@ model Product {
   BoMLine           BoMLine[]
   ManufacturingOrder ManufacturingOrder[]
   StockLedger       StockLedger[]
+  MOComponent       MOComponent[]
 }
 
 model SalesOrder {
@@ -126,6 +128,7 @@ model WorkCenter {
   id         String      @id @default(uuid())
   name       String
   Operations Operation[]
+  WorkOrders WorkOrder[]
 }
 
 model Operation {
@@ -143,23 +146,40 @@ model ManufacturingOrder {
   id          String      @id @default(uuid())
   productId   String
   quantity    Float
-  status      String      // DRAFT, CONFIRMED, IN_PROGRESS, DONE
+  status      String      // DRAFT, CONFIRMED, IN_PROGRESS, DONE, CANCELLED
   bomId       String
+  assigneeId  String?
+  assignee    User?       @relation("UserToMO", fields: [assigneeId], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   product     Product     @relation(fields: [productId], references: [id])
   bom         BoM         @relation(fields: [bomId], references: [id])
   WorkOrders  WorkOrder[]
+  components  MOComponent[]
+}
+
+model MOComponent {
+  id          String    @id @default(uuid())
+  moId        String
+  productId   String
+  toConsume   Float
+  consumed    Float     @default(0)
+  mo          ManufacturingOrder @relation(fields: [moId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
 }
 
 model WorkOrder {
-  id          String             @id @default(uuid())
-  moId        String
-  operationId String
-  status      String             // PENDING, IN_PROGRESS, DONE
-  duration    Int
-  mo          ManufacturingOrder @relation(fields: [moId], references: [id])
-  operation   Operation          @relation(fields: [operationId], references: [id])
+  id               String             @id @default(uuid())
+  moId             String
+  operationId      String?
+  operationName    String?            // Fallback for custom operations
+  workCenterId     String?
+  status           String             // PENDING, IN_PROGRESS, DONE
+  expectedDuration Int                @default(0) // in minutes
+  realDuration     Int                @default(0)
+  mo               ManufacturingOrder @relation(fields: [moId], references: [id])
+  operation        Operation?         @relation(fields: [operationId], references: [id])
+  workCenter       WorkCenter?        @relation(fields: [workCenterId], references: [id])
 }
 
 model StockLedger {
