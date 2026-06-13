@@ -86,11 +86,14 @@ export interface SalesOrderLine {
 export interface SalesOrder {
   id: string;
   customerName: string;
+  customerAddress?: string | null;
+  salesPersonId?: string | null;
   status: SalesOrderStatus;
   totalAmount: number;
   createdAt: Date;
   updatedAt: Date;
   orderLines?: SalesOrderLine[];
+  salesPerson?: User | null;
 }
 
 export interface CreateSalesOrderLine {
@@ -101,6 +104,8 @@ export interface CreateSalesOrderLine {
 
 export interface CreateSalesOrderData {
   customerName: string;
+  customerAddress?: string;
+  salesPersonId?: string;
   orderLines: CreateSalesOrderLine[];
 }
 

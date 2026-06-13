@@ -38,3 +38,12 @@ export const deliverOrder = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
   }
 };
+
+export const cancelOrder = async (req: AuthRequest, res: Response) => {
+  try {
+    const so = await salesService.cancelSalesOrder(req.params.id, req.user?.id);
+    res.json(so);
+  } catch (error: unknown) {
+    res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+  }
+};

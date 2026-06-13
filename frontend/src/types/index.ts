@@ -49,11 +49,14 @@ export interface SalesOrderLine {
 export interface SalesOrder {
   id: string;
   customerName: string;
+  customerAddress?: string | null;
+  salesPersonId?: string | null;
   status: SalesOrderStatus;
   totalAmount: number;
   createdAt: string;
   updatedAt: string;
   orderLines: SalesOrderLine[];
+  salesPerson?: User | null;
 }
 
 export type PurchaseOrderStatus = 'DRAFT' | 'CONFIRMED' | 'PARTIALLY_RECEIVED' | 'RECEIVED';

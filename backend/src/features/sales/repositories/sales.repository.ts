@@ -3,10 +3,12 @@ import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem, SalesOrde
 
 export class SalesRepository {
   async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number }) {
-    const { customerName, orderLines, totalAmount } = data;
+    const { customerName, customerAddress, salesPersonId, orderLines, totalAmount } = data;
     return await prisma.salesOrder.create({
       data: {
         customerName,
+        customerAddress,
+        salesPersonId,
         status: 'DRAFT',
         totalAmount,
         orderLines: {
@@ -24,7 +26,10 @@ export class SalesRepository {
   async findSalesOrderById(id: string) {
     return await prisma.salesOrder.findUnique({
       where: { id },
-      include: { orderLines: { include: { product: true } } },
+      include: { 
+        orderLines: { include: { product: true } },
+        salesPerson: true
+      },
     });
   }
 
@@ -54,9 +59,19 @@ export class SalesRepository {
     });
   }
 
+  async cancelSalesOrder(id: string) {
+    return await prisma.salesOrder.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+    });
+  }
+
   async findAllSalesOrders() {
     return await prisma.salesOrder.findMany({
-      include: { orderLines: { include: { product: true } } },
+      include: { 
+        orderLines: { include: { product: true } },
+        salesPerson: true
+      },
       orderBy: { createdAt: 'desc' }
     });
   }

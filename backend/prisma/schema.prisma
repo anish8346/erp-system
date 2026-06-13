@@ -18,6 +18,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   AuditLog  AuditLog[]
+  SalesOrder SalesOrder[]
 }
 
 model Vendor {
@@ -56,13 +57,16 @@ model Product {
 }
 
 model SalesOrder {
-  id           String           @id @default(uuid())
-  customerName String
-  status       String           // DRAFT, CONFIRMED, PARTIALLY_DELIVERED, DELIVERED, CANCELLED
-  totalAmount  Float
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  orderLines   SalesOrderLine[]
+  id              String           @id @default(uuid())
+  customerName    String
+  customerAddress String?
+  salesPersonId   String?
+  salesPerson     User?            @relation(fields: [salesPersonId], references: [id])
+  status          String           // DRAFT, CONFIRMED, PARTIALLY_DELIVERED, DELIVERED, CANCELLED
+  totalAmount     Float
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  orderLines      SalesOrderLine[]
 }
 
 model SalesOrderLine {
