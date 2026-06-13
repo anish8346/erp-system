@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, User, Phone, Mail, MapPin } from 'lucide-react';
 import { Button, Card, Input, Modal } from '../components/UI';
+import { Vendor } from '../types';
 
 const Vendors = () => {
-  const [vendors, setVendors] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -96,7 +97,7 @@ const Vendors = () => {
             label="Vendor Name" 
             placeholder="e.g. Reliance Wood Supplies"
             value={formData.name}
-            onChange={(e: any) => setFormData({...formData, name: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
             required
           />
           <div className="grid grid-cols-2 gap-4">
@@ -105,20 +106,20 @@ const Vendors = () => {
               type="email"
               placeholder="vendor@example.com"
               value={formData.email}
-              onChange={(e: any) => setFormData({...formData, email: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
             />
             <Input 
               label="Phone Number" 
               placeholder="+91 9876543210"
               value={formData.phone}
-              onChange={(e: any) => setFormData({...formData, phone: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, phone: e.target.value})}
             />
           </div>
           <Input 
             label="Business Address" 
             placeholder="Full office/warehouse address"
             value={formData.address}
-            onChange={(e: any) => setFormData({...formData, address: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, address: e.target.value})}
           />
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="secondary" type="button" onClick={() => setShowModal(false)}>Cancel</Button>

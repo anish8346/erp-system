@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../../core/database/prisma.js';
 
 export class OperationsRepository {
@@ -5,15 +6,15 @@ export class OperationsRepository {
     return await prisma.boM.findUnique({ where: { productId } });
   }
 
-  static async deleteBoMLinesByBomId(bomId: string, tx: any = prisma) {
+  static async deleteBoMLinesByBomId(bomId: string, tx: Prisma.TransactionClient = prisma) {
     return await tx.boMLine.deleteMany({ where: { bomId } });
   }
 
-  static async deleteOperationsByBomId(bomId: string, tx: any = prisma) {
+  static async deleteOperationsByBomId(bomId: string, tx: Prisma.TransactionClient = prisma) {
     return await tx.operation.deleteMany({ where: { bomId } });
   }
 
-  static async updateBoM(id: string, data: any, tx: any = prisma) {
+  static async updateBoM(id: string, data: Prisma.BoMUpdateInput, tx: Prisma.TransactionClient = prisma) {
     return await tx.boM.update({
       where: { id },
       data,
@@ -21,7 +22,7 @@ export class OperationsRepository {
     });
   }
 
-  static async createBoM(data: any, tx: any = prisma) {
+  static async createBoM(data: Prisma.BoMCreateInput, tx: Prisma.TransactionClient = prisma) {
     return await tx.boM.create({
       data,
       include: { bomLines: true, operations: true },
@@ -51,7 +52,7 @@ export class OperationsRepository {
     });
   }
 
-  static async createMO(data: any) {
+  static async createMO(data: Prisma.ManufacturingOrderCreateInput) {
     return await prisma.manufacturingOrder.create({
       data,
     });
@@ -68,14 +69,14 @@ export class OperationsRepository {
     });
   }
 
-  static async updateMO(id: string, data: any, tx: any = prisma) {
+  static async updateMO(id: string, data: Prisma.ManufacturingOrderUpdateInput, tx: Prisma.TransactionClient = prisma) {
     return await tx.manufacturingOrder.update({
       where: { id },
       data
     });
   }
 
-  static async updateWorkOrder(id: string, data: any) {
+  static async updateWorkOrder(id: string, data: Prisma.WorkOrderUpdateInput) {
     return await prisma.workOrder.update({
       where: { id },
       data,

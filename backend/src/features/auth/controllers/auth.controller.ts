@@ -6,10 +6,11 @@ export class AuthController {
     try {
       const user = await AuthService.registerUser(req.body);
       res.status(201).json({ message: 'User created successfully', userId: user.id });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Register Error]:', error);
-      if (error.message === 'A user with this email already exists.') {
-        return res.status(400).json({ error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      if (message === 'A user with this email already exists.') {
+        return res.status(400).json({ error: message });
       }
       res.status(500).json({ error: 'System failed to register user. Please try again later.' });
     }
@@ -24,10 +25,11 @@ export class AuthController {
 
       const result = await AuthService.loginUser({ email, password });
       res.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Login Error]:', error);
-      if (error.message === 'Invalid email or password.') {
-        return res.status(401).json({ error: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      if (message === 'Invalid email or password.') {
+        return res.status(401).json({ error: message });
       }
       res.status(500).json({ error: 'Login service currently unavailable.' });
     }

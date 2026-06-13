@@ -1,7 +1,8 @@
 import prisma from '../../../core/database/prisma.js';
+import { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem, SalesOrderStatus, CreateMOData, CreatePOData, SalesOrder, SalesOrderLine } from '../../../core/types/index.js';
 
 export class SalesRepository {
-  async createSalesOrder(data: any) {
+  async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number }) {
     const { customerName, orderLines, totalAmount } = data;
     return await prisma.salesOrder.create({
       data: {
@@ -9,7 +10,7 @@ export class SalesRepository {
         status: 'DRAFT',
         totalAmount,
         orderLines: {
-          create: orderLines.map((line: any) => ({
+          create: orderLines.map((line: CreateSalesOrderLine) => ({
             productId: line.productId,
             quantity: Number(line.quantity),
             price: Number(line.price),
@@ -34,19 +35,19 @@ export class SalesRepository {
     });
   }
 
-  async createManufacturingOrder(data: any) {
+  async createManufacturingOrder(data: CreateMOData) {
     return await prisma.manufacturingOrder.create({
       data
     });
   }
 
-  async createPurchaseOrder(data: any) {
+  async createPurchaseOrder(data: CreatePOData) {
     return await prisma.purchaseOrder.create({
       data
     });
   }
 
-  async updateSalesOrderStatus(id: string, status: any) {
+  async updateSalesOrderStatus(id: string, status: SalesOrderStatus) {
     return await prisma.salesOrder.update({
       where: { id },
       data: { status },
@@ -60,12 +61,12 @@ export class SalesRepository {
     });
   }
 
-  async deliverOrderTransaction(so: any, items: any[]) {
+  async deliverOrderTransaction(so: SalesOrder & { orderLines: SalesOrderLine[] }, items: DeliverItem[]) {
     return await prisma.$transaction(async (tx) => {
       let allDelivered = true;
 
       for (const line of so.orderLines) {
-        const itemToDeliver = items?.find((i: any) => i.lineId === line.id);
+        const itemToDeliver = items?.find((i: DeliverItem) => i.lineId === line.id);
         const qtyToDeliver = itemToDeliver ? Number(itemToDeliver.quantity) : 0;
         if (qtyToDeliver > 0) {
           const remainingToDeliver = line.quantity - line.deliveredQty;

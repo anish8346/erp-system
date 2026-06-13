@@ -2,8 +2,25 @@ import prisma from '../../../core/database/prisma.js';
 import { logActivity } from '../../../core/utils/logger.js';
 import { ProcurementRepository } from '../repositories/procurement.repository.js';
 
+interface PurchaseOrderLineInput {
+  productId: string;
+  quantity: number | string;
+  price: number | string;
+}
+
+interface CreatePurchaseOrderInput {
+  vendorId?: string;
+  vendorName: string;
+  orderLines: PurchaseOrderLineInput[];
+}
+
+interface ReceiveItemInput {
+  lineId: string;
+  quantity: number | string;
+}
+
 export class ProcurementService {
-  static async createPurchaseOrder(data: any, userId?: string) {
+  static async createPurchaseOrder(data: CreatePurchaseOrderInput, userId?: string) {
     const { vendorName, orderLines } = data;
     if (!vendorName || !orderLines?.length) {
       throw new Error('Vendor and products are required for procurement.');
@@ -18,7 +35,7 @@ export class ProcurementService {
     return po;
   }
 
-  static async receivePurchaseOrder(id: string, items: any[], userId?: string) {
+  static async receivePurchaseOrder(id: string, items: ReceiveItemInput[], userId?: string) {
     const po = await ProcurementRepository.findPurchaseOrderById(id);
 
     if (!po) throw new Error('Purchase Order not found.');
@@ -28,7 +45,7 @@ export class ProcurementService {
       let allReceived = true;
 
       for (const line of po.orderLines) {
-        const itemToReceive = items?.find((i: any) => i.lineId === line.id);
+        const itemToReceive = items?.find((i: ReceiveItemInput) => i.lineId === line.id);
         const qtyToReceive = itemToReceive ? Number(itemToReceive.quantity) : 0;
 
         if (qtyToReceive > 0) {

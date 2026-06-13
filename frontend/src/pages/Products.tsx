@@ -3,27 +3,16 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Package, X, ArrowUpRight } from 'lucide-react';
 import { Button, Input, Card, Badge, Modal } from '../components/UI';
-
-interface Product {
-  id: string;
-  name: string;
-  salesPrice: number;
-  costPrice: number;
-  qtyOnHand: number;
-  qtyReserved: number;
-  procurementType: string;
-  supplyMethod: string;
-  vendorId?: string;
-  vendor?: { name: string };
-}
+import { Product, Vendor, ProcurementType, SupplyMethod } from '../types';
+import axios from 'axios';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adjustData, setAdjustData] = useState({ id: '', name: '', adjustment: 0, reason: '' });
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -32,8 +21,8 @@ const Products = () => {
     salesPrice: 0,
     costPrice: 0,
     qtyOnHand: 0,
-    procurementType: 'MTS',
-    supplyMethod: 'PURCHASE',
+    procurementType: 'MTS' as ProcurementType,
+    supplyMethod: 'PURCHASE' as SupplyMethod,
     vendorId: '',
   });
 
@@ -61,19 +50,28 @@ const Products = () => {
       setShowModal(false);
       setNewProduct({ name: '', salesPrice: 0, costPrice: 0, qtyOnHand: 0, procurementType: 'MTS', supplyMethod: 'PURCHASE', vendorId: '' });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to create product. Check system logs.");
+    } catch (err: unknown) {
+      let errorMsg = "Operation failed";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingProduct) return;
     try {
       await api.put(`/products/${editingProduct.id}`, editingProduct);
       setShowEditModal(false);
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to update product details.");
+    } catch (err: unknown) {
+      let errorMsg = "Operation failed";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
@@ -87,8 +85,12 @@ const Products = () => {
       setShowAdjustModal(false);
       setAdjustData({ id: '', name: '', adjustment: 0, reason: '' });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to apply manual adjustment.");
+    } catch (err: unknown) {
+      let errorMsg = "Operation failed";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
@@ -97,8 +99,12 @@ const Products = () => {
       try {
         await api.delete(`/products/${id}`);
         fetchData();
-      } catch (err: any) {
-        alert(err.response?.data?.error || "System could not delete this product.");
+      } catch (err: unknown) {
+        let errorMsg = "Operation failed";
+        if (axios.isAxiosError(err)) {
+          errorMsg = err.response?.data?.error || errorMsg;
+        }
+        alert(errorMsg);
       }
     }
   };
@@ -222,7 +228,7 @@ const Products = () => {
             label="Product Name" 
             placeholder="e.g. Wooden Dining Table"
             value={newProduct.name}
-            onChange={(e: any) => setNewProduct({...newProduct, name: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProduct({...newProduct, name: e.target.value})}
             required
           />
           <div className="grid grid-cols-2 gap-4">
@@ -231,7 +237,7 @@ const Products = () => {
               type="number"
               step="0.01"
               value={newProduct.salesPrice}
-              onChange={(e: any) => setNewProduct({...newProduct, salesPrice: Number(e.target.value)})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProduct({...newProduct, salesPrice: Number(e.target.value)})}
               required
             />
             <Input 
@@ -239,7 +245,7 @@ const Products = () => {
               type="number"
               step="0.01"
               value={newProduct.costPrice}
-              onChange={(e: any) => setNewProduct({...newProduct, costPrice: Number(e.target.value)})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProduct({...newProduct, costPrice: Number(e.target.value)})}
               required
             />
           </div>
@@ -247,7 +253,7 @@ const Products = () => {
             label="Initial Stock Quantity" 
             type="number"
             value={newProduct.qtyOnHand}
-            onChange={(e: any) => setNewProduct({...newProduct, qtyOnHand: Number(e.target.value)})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewProduct({...newProduct, qtyOnHand: Number(e.target.value)})}
             required
           />
           <div className="grid grid-cols-2 gap-4">
@@ -256,7 +262,7 @@ const Products = () => {
               <select 
                 className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                 value={newProduct.procurementType}
-                onChange={(e) => setNewProduct({...newProduct, procurementType: e.target.value})}
+                onChange={(e) => setNewProduct({...newProduct, procurementType: e.target.value as ProcurementType})}
               >
                 <option value="MTS">Make To Stock (MTS)</option>
                 <option value="MTO">Make To Order (MTO)</option>
@@ -267,7 +273,7 @@ const Products = () => {
               <select 
                 className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                 value={newProduct.supplyMethod}
-                onChange={(e) => setNewProduct({...newProduct, supplyMethod: e.target.value})}
+                onChange={(e) => setNewProduct({...newProduct, supplyMethod: e.target.value as SupplyMethod})}
               >
                 <option value="PURCHASE">Purchase from Vendor</option>
                 <option value="MANUFACTURE">Manufacture In-House</option>
@@ -303,7 +309,7 @@ const Products = () => {
             <Input 
               label="Product Name" 
               value={editingProduct.name}
-              onChange={(e: any) => setEditingProduct({...editingProduct, name: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingProduct({...editingProduct, name: e.target.value})}
               required
             />
             <div className="grid grid-cols-2 gap-4">
@@ -312,7 +318,7 @@ const Products = () => {
                 type="number"
                 step="0.01"
                 value={editingProduct.salesPrice}
-                onChange={(e: any) => setEditingProduct({...editingProduct, salesPrice: Number(e.target.value)})}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingProduct({...editingProduct, salesPrice: Number(e.target.value)})}
                 required
               />
               <Input 
@@ -320,7 +326,7 @@ const Products = () => {
                 type="number"
                 step="0.01"
                 value={editingProduct.costPrice}
-                onChange={(e: any) => setEditingProduct({...editingProduct, costPrice: Number(e.target.value)})}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingProduct({...editingProduct, costPrice: Number(e.target.value)})}
                 required
               />
             </div>
@@ -330,7 +336,7 @@ const Products = () => {
                 <select 
                   className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                   value={editingProduct.procurementType}
-                  onChange={(e) => setEditingProduct({...editingProduct, procurementType: e.target.value})}
+                  onChange={(e) => setEditingProduct({...editingProduct, procurementType: e.target.value as ProcurementType})}
                 >
                   <option value="MTS">Make To Stock (MTS)</option>
                   <option value="MTO">Make To Order (MTO)</option>
@@ -341,7 +347,7 @@ const Products = () => {
                 <select 
                   className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                   value={editingProduct.supplyMethod}
-                  onChange={(e) => setEditingProduct({...editingProduct, supplyMethod: e.target.value})}
+                  onChange={(e) => setEditingProduct({...editingProduct, supplyMethod: e.target.value as SupplyMethod})}
                 >
                   <option value="PURCHASE">Purchase from Vendor</option>
                   <option value="MANUFACTURE">Manufacture In-House</option>
@@ -387,7 +393,7 @@ const Products = () => {
               type="number"
               placeholder="e.g. 10 or -5"
               value={adjustData.adjustment}
-              onChange={(e: any) => setAdjustData({...adjustData, adjustment: Number(e.target.value)})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdjustData({...adjustData, adjustment: Number(e.target.value)})}
               required
             />
 
@@ -395,7 +401,7 @@ const Products = () => {
               label="Reason for Adjustment" 
               placeholder="e.g. Damaged items or Physical count correction"
               value={adjustData.reason}
-              onChange={(e: any) => setAdjustData({...adjustData, reason: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAdjustData({...adjustData, reason: e.target.value})}
               required
             />
 
@@ -409,7 +415,14 @@ const Products = () => {
   );
 };
 
-const StockStat = ({ label, value, color, bold }: any) => (
+interface StockStatProps {
+  label: string;
+  value: number;
+  color: string;
+  bold?: boolean;
+}
+
+const StockStat = ({ label, value, color, bold }: StockStatProps) => (
   <div className="flex flex-col items-center">
     <span className="text-[9px] font-semibold uppercase text-warm-taupe/60 tracking-wider mb-0.5">{label}</span>
     <span className={`text-sm ${bold ? 'font-bold' : 'font-medium'} ${color}`}>{value}</span>
@@ -417,3 +430,4 @@ const StockStat = ({ label, value, color, bold }: any) => (
 );
 
 export default Products;
+

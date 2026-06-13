@@ -1,24 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Factory, PlayCircle, CheckCircle2, ChevronRight, Activity, Clock, Box, Plus, Search } from 'lucide-react';
+import { Factory, CheckCircle2, Activity, Clock, Box, Plus, Search } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-
-interface ManufacturingOrder {
-  id: string;
-  productId: string;
-  product: any;
-  quantity: number;
-  status: string;
-  bom: any;
-  WorkOrders: any[];
-  createdAt: string;
-}
+import { ManufacturingOrder, Product, BoM, WorkOrder } from '../types';
 
 const Manufacturing = () => {
   const [mos, setMos] = useState<ManufacturingOrder[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [boms, setBoms] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [boms, setBoms] = useState<BoM[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newMO, setNewMO] = useState({
@@ -53,8 +43,9 @@ const Manufacturing = () => {
       setShowForm(false);
       setNewMO({ productId: '', quantity: 1, bomId: '' });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to create manufacturing order");
+    } catch (err: unknown) {
+      const errorMsg = (err as any).response?.data?.error || "Failed to create manufacturing order";
+      alert(errorMsg);
     }
   };
 
@@ -62,8 +53,9 @@ const Manufacturing = () => {
     try {
       await api.post(`/manufacturing/${id}/produce`);
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Production failed. Check component stock and work steps.");
+    } catch (err: unknown) {
+      const errorMsg = (err as any).response?.data?.error || "Production failed. Check component stock and work steps.";
+      alert(errorMsg);
     }
   };
 
@@ -71,13 +63,14 @@ const Manufacturing = () => {
     try {
       await api.patch(`/manufacturing/work-order/${woId}/status`, { status });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to update work order status");
+    } catch (err: unknown) {
+      const errorMsg = (err as any).response?.data?.error || "Failed to update work order status";
+      alert(errorMsg);
     }
   };
 
   const filteredMOs = mos.filter(mo => 
-    mo.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mo.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mo.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -100,14 +93,14 @@ const Manufacturing = () => {
             placeholder="Search by product or order ID..." 
             className="w-full pl-10 pr-4 py-2 bg-faded-white border-none rounded-xl text-sm focus:ring-2 focus:ring-luxury-brown/20 outline-none transition-all font-medium"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
         {filteredMOs.map((mo) => {
-          const allStepsDone = mo.WorkOrders?.length > 0 && mo.WorkOrders.every((wo: any) => wo.status === 'DONE');
+          const allStepsDone = mo.WorkOrders?.length > 0 && mo.WorkOrders.every((wo: WorkOrder) => wo.status === 'DONE');
           const isDone = mo.status === 'DONE';
 
           return (
@@ -120,7 +113,7 @@ const Manufacturing = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
-                        <h3 className="font-bold text-luxury-brown text-lg">{mo.product.name}</h3>
+                        <h3 className="font-bold text-luxury-brown text-lg">{mo.product?.name}</h3>
                         <Badge variant={isDone ? 'success' : mo.status === 'DRAFT' ? 'neutral' : 'purple'}>
                           {mo.status.replace('_', ' ')}
                         </Badge>
@@ -161,7 +154,7 @@ const Manufacturing = () => {
                 {/* Work Orders / Steps Flow */}
                 {mo.WorkOrders?.length > 0 && (
                   <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {mo.WorkOrders.map((wo: any, idx: number) => (
+                    {mo.WorkOrders.map((wo: WorkOrder, idx: number) => (
                       <div key={wo.id} className={`relative p-4 rounded-xl border transition-all ${
                         wo.status === 'DONE' ? 'bg-emerald-50/50 border-emerald-100' : 
                         wo.status === 'IN_PROGRESS' ? 'bg-indigo-50/50 border-indigo-200 ring-4 ring-indigo-500/5' : 
@@ -171,8 +164,8 @@ const Manufacturing = () => {
                            <span className="text-[10px] font-bold text-warm-taupe/60 uppercase tracking-wider">Step {idx + 1}</span>
                            {wo.status === 'DONE' ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-gray-300" />}
                         </div>
-                        <h4 className="font-bold text-luxury-brown text-sm mb-1">{wo.operation.name}</h4>
-                        <p className="text-[10px] text-warm-taupe font-bold uppercase mb-4 tracking-tight">{wo.operation.workCenter?.name || 'General Assembly'}</p>
+                        <h4 className="font-bold text-luxury-brown text-sm mb-1">{wo.operation?.name}</h4>
+                        <p className="text-[10px] text-warm-taupe font-bold uppercase mb-4 tracking-tight">{(wo.operation as any)?.workCenter?.name || 'General Assembly'}</p>
                         
                         <div className="flex gap-2">
                           {wo.status === 'PENDING' && !isDone && (
@@ -230,7 +223,7 @@ const Manufacturing = () => {
               <select 
                 className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
                 value={newMO.productId}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                   const prod = products.find(p => p.id === e.target.value);
                   setNewMO({...newMO, productId: e.target.value, bomId: prod?.bomId || ''});
                 }}
@@ -247,7 +240,7 @@ const Manufacturing = () => {
               type="number"
               min="1"
               value={newMO.quantity}
-              onChange={(e: any) => setNewMO({...newMO, quantity: Number(e.target.value)})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMO({...newMO, quantity: Number(e.target.value)})}
               required
             />
           </div>

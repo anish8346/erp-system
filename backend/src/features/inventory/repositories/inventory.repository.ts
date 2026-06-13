@@ -1,7 +1,8 @@
 import prisma from '../../../core/database/prisma.js';
+import { CreateProductData, UpdateProductData, StockLedgerType } from '../../../core/types/index.js';
 
 export class InventoryRepository {
-  async createProduct(data: any) {
+  async createProduct(data: CreateProductData) {
     const { name, salesPrice, costPrice, procurementType, supplyMethod, vendorId, bomId, qtyOnHand } = data;
     return await prisma.product.create({
       data: {
@@ -18,7 +19,7 @@ export class InventoryRepository {
     });
   }
 
-  async createStockLedgerEntry(productId: string, quantityChange: number, type: string, referenceId: string) {
+  async createStockLedgerEntry(productId: string, quantityChange: number, type: StockLedgerType, referenceId: string) {
     return await prisma.stockLedger.create({
       data: {
         productId,
@@ -51,14 +52,14 @@ export class InventoryRepository {
     });
   }
 
-  async updateProduct(id: string, data: any) {
+  async updateProduct(id: string, data: UpdateProductData) {
     const { name, salesPrice, costPrice, procurementType, supplyMethod, vendorId } = data;
     return await prisma.product.update({
       where: { id },
       data: {
         name,
-        salesPrice: Number(salesPrice),
-        costPrice: Number(costPrice),
+        salesPrice: salesPrice !== undefined ? Number(salesPrice) : undefined,
+        costPrice: costPrice !== undefined ? Number(costPrice) : undefined,
         procurementType,
         supplyMethod,
         vendorId: vendorId || null,

@@ -159,12 +159,18 @@ const DashboardLayout = () => {
 };
 
 // Reusable NavItem for consistent professional styling
-const NavItem = ({ to, icon, label }: any) => (
+interface NavItemProps {
+  to: string;
+  icon: React.ReactElement;
+  label: string;
+}
+
+const NavItem = ({ to, icon, label }: NavItemProps) => (
   <Link 
     to={to} 
     className="flex items-center gap-3 px-3 py-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all group font-semibold text-[14px]"
   >
-    {React.cloneElement(icon, { className: "w-4 h-4 group-hover:scale-110 transition-transform" })}
+    {React.cloneElement(icon, { className: "w-4 h-4 group-hover:scale-110 transition-transform" } as any)}
     <span>{label}</span>
   </Link>
 );

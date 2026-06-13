@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { ShoppingCart, Truck, Factory, AlertTriangle, TrendingUp, Package, History, IndianRupee, TrendingDown, Wallet } from 'lucide-react';
 import { Card, Badge, Button } from '../components/UI';
+import { SalesOrder, Product, ManufacturingOrder, StockLedger } from '../types';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -17,7 +18,7 @@ const Dashboard = () => {
     totalExpenses: 0,
     netProfit: 0
   });
-  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [recentLogs, setRecentLogs] = useState<StockLedger[]>([]);
   const [loading, setLoading] = useState(true);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -37,11 +38,11 @@ const Dashboard = () => {
           setFinance(finRes.data);
         }
 
-        const confirmedSales = (sales.data || []).filter((s: any) => s.status === 'CONFIRMED' || s.status === 'PARTIALLY_DELIVERED');
-        const lowStockItems = (products.data || []).filter((p: any) => (p.qtyOnHand - p.qtyReserved) <= 0);
-        const activeMFG = (mos.data || []).filter((m: any) => m.status !== 'DONE');
+        const confirmedSales = (sales.data || []).filter((s: SalesOrder) => s.status === 'CONFIRMED' || s.status === 'PARTIALLY_DELIVERED');
+        const lowStockItems = (products.data || []).filter((p: Product) => (p.qtyOnHand - p.qtyReserved) <= 0);
+        const activeMFG = (mos.data || []).filter((m: ManufacturingOrder) => m.status !== 'DONE');
 
-        const delayedOrdersCount = confirmedSales.filter((s: any) => {
+        const delayedOrdersCount = confirmedSales.filter((s: SalesOrder) => {
           return new Date().getTime() - new Date(s.createdAt).getTime() > 2 * 24 * 60 * 60 * 1000;
         }).length;
 
@@ -60,7 +61,7 @@ const Dashboard = () => {
       }
     };
     fetchStats();
-  }, []);
+  }, [user.role]);
 
   if (loading) {
     return (
@@ -153,7 +154,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20">
         <Card title="Recent Stock Movements" subtitle="Last 5 verified inventory changes" className="lg:col-span-3">
           <div className="space-y-4">
-            {recentLogs.map((log: any) => (
+            {recentLogs.map((log: StockLedger) => (
               <div key={log.id} className="flex items-center justify-between p-4 hover:bg-faded-white rounded-2xl transition-all border border-transparent hover:border-[#e8e4db]">
                 <div className="flex items-center gap-5">
                   <div className={`p-3 rounded-xl ${log.quantityChange > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} border border-current/10`}>
@@ -183,7 +184,16 @@ const Dashboard = () => {
   );
 };
 
-const FinanceCard = ({ label, value, icon, sub, color, isBold }: any) => (
+interface FinanceCardProps {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  sub: string;
+  color: string;
+  isBold?: boolean;
+}
+
+const FinanceCard = ({ label, value, icon, sub, color, isBold }: FinanceCardProps) => (
   <div className="bg-white/5 border border-white/10 p-8 rounded-2xl backdrop-blur-sm">
     <div className="flex items-center gap-3 mb-4">
        <div className={`p-2.5 rounded-xl bg-white/10 ${color} border border-white/10`}>
@@ -196,8 +206,16 @@ const FinanceCard = ({ label, value, icon, sub, color, isBold }: any) => (
   </div>
 );
 
-const KPICard = ({ title, value, icon, color, trend }: any) => {
-  const colors: any = {
+interface KPICardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: 'brown' | 'taupe' | 'gold' | 'red';
+  trend: string;
+}
+
+const KPICard = ({ title, value, icon, color, trend }: KPICardProps) => {
+  const colors: Record<string, string> = {
     brown: "text-luxury-brown bg-white border-[#e8e4db]",
     taupe: "text-warm-taupe bg-white border-[#e8e4db]",
     gold: "text-furniture-gold bg-white border-[#e8e4db]",
@@ -224,3 +242,4 @@ const KPICard = ({ title, value, icon, color, trend }: any) => {
 };
 
 export default Dashboard;
+

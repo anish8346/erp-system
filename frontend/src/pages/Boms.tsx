@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, Trash2, ListTree, Timer, Package, ChevronRight } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
+import { BoM, Product, WorkCenter, BoMLine, Operation } from '../types';
+import axios from 'axios';
 
 const Boms = () => {
-  const [boms, setBoms] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [workCenters, setWorkCenters] = useState<any[]>([]);
+  const [boms, setBoms] = useState<BoM[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [workCenters, setWorkCenters] = useState<WorkCenter[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newBom, setNewBom] = useState({
     productId: '',
@@ -71,8 +73,12 @@ const Boms = () => {
         operations: [{ name: '', workCenterId: '', duration: 30 }]
       });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to save Bill of Materials");
+    } catch (err: unknown) {
+      let errorMsg = "Failed to save Bill of Materials";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
@@ -93,7 +99,7 @@ const Boms = () => {
           <Card key={bom.id} className="hover:shadow-md transition-all border-l-4 border-l-luxury-brown">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-luxury-brown">{bom.product.name}</h3>
+                <h3 className="text-xl font-bold text-luxury-brown">{bom.product?.name}</h3>
                 <p className="text-sm text-warm-taupe font-medium">{bom.name}</p>
               </div>
               <Badge variant="neutral">REF-{bom.id.slice(0,5).toUpperCase()}</Badge>
@@ -105,9 +111,9 @@ const Boms = () => {
                   <Package className="w-3 h-3" /> Material Requirements
                 </p>
                 <div className="space-y-2">
-                  {bom.bomLines.map((line: any) => (
+                  {bom.bomLines.map((line: BoMLine) => (
                     <div key={line.id} className="flex justify-between text-sm bg-faded-white px-3 py-2 rounded-xl border border-soft-cream">
-                      <span className="text-gray-700 font-semibold">{line.component.name}</span>
+                      <span className="text-gray-700 font-semibold">{line.component?.name}</span>
                       <span className="font-bold text-luxury-brown">x{line.quantity}</span>
                     </div>
                   ))}
@@ -119,7 +125,7 @@ const Boms = () => {
                   <ListTree className="w-3 h-3" /> Production Steps
                 </p>
                 <div className="space-y-2">
-                  {bom.operations?.map((op: any) => (
+                  {bom.operations?.map((op: Operation) => (
                     <div key={op.id} className="flex items-center gap-3 bg-faded-white p-3 rounded-xl border border-soft-cream">
                       <div className="p-2 bg-white rounded-lg border border-soft-cream">
                         <Timer className="w-4 h-4 text-luxury-brown" />
@@ -171,7 +177,7 @@ const Boms = () => {
               label="BoM Name / Version" 
               placeholder="e.g. Standard 2024 Design" 
               value={newBom.name}
-              onChange={(e: any) => setNewBom({...newBom, name: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewBom({...newBom, name: e.target.value})}
               required
             />
           </div>
@@ -209,7 +215,7 @@ const Boms = () => {
                       placeholder="Qty" 
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-luxury-brown"
                       value={comp.quantity}
-                      onChange={(e: any) => {
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         const updated = [...newBom.components];
                         updated[idx].quantity = Number(e.target.value);
                         setNewBom({...newBom, components: updated});

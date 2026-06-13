@@ -1,13 +1,14 @@
 import { salesRepository } from '../repositories/sales.repository.js';
 import { logActivity } from '../../../core/utils/logger.js';
+import { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem } from '../../../core/types/index.js';
 
-export const createSalesOrder = async (data: any, userId?: string) => {
+export const createSalesOrder = async (data: CreateSalesOrderData, userId?: string) => {
   const { customerName, orderLines } = data;
   if (!customerName || !orderLines?.length) {
     throw new Error('Customer name and at least one product are required.');
   }
   
-  const totalAmount = orderLines.reduce((acc: number, line: any) => acc + (line.quantity * line.price), 0);
+  const totalAmount = orderLines.reduce((acc: number, line: CreateSalesOrderLine) => acc + (line.quantity * line.price), 0);
   
   const so = await salesRepository.createSalesOrder({ customerName, orderLines, totalAmount });
 
@@ -72,7 +73,7 @@ export const confirmSalesOrder = async (id: string, userId?: string) => {
   return updatedSO;
 };
 
-export const deliverSalesOrder = async (id: string, items: any[], userId?: string) => {
+export const deliverSalesOrder = async (id: string, items: DeliverItem[], userId?: string) => {
   const so = await salesRepository.findSalesOrderById(id);
   
   if (!so) throw new Error('Sales Order not found.');

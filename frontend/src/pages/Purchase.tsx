@@ -3,24 +3,16 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, Download, Truck, ShoppingCart, Package, Search, Clock } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-
-interface PurchaseOrder {
-  id: string;
-  vendorName: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-  orderLines: any[];
-}
+import { PurchaseOrder, Product, Vendor, PurchaseOrderLine } from '../types';
 
 const Purchase = () => {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-  const [receiveQtys, setReceiveQtys] = useState<any>({});
+  const [receiveQtys, setReceiveQtys] = useState<Record<string, number>>({});
   const [searchTerm, setSearchTerm] = useState('');
 
   const [newOrder, setNewOrder] = useState({
@@ -53,6 +45,7 @@ const Purchase = () => {
     try {
       const product = products.find(p => p.id === newOrder.productId);
       const vendor = vendors.find(v => v.id === newOrder.vendorId);
+      if (!product) return;
       
       await api.post('/purchase', {
         vendorId: newOrder.vendorId,
@@ -66,14 +59,15 @@ const Purchase = () => {
       setShowForm(false);
       setNewOrder({ vendorId: '', productId: '', quantity: 1 });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to create procurement order");
+    } catch (err: unknown) {
+      const errorMsg = (err as any).response?.data?.error || "Failed to create procurement order";
+      alert(errorMsg);
     }
   };
 
   const openReceiveModal = (order: PurchaseOrder) => {
     setSelectedOrder(order);
-    const initialQtys: any = {};
+    const initialQtys: Record<string, number> = {};
     order.orderLines.forEach(line => {
       initialQtys[line.id] = line.quantity - (line.receivedQty || 0);
     });
@@ -94,8 +88,9 @@ const Purchase = () => {
       await api.post(`/purchase/${selectedOrder.id}/receive`, { items });
       setShowReceiveModal(false);
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Receipt failed");
+    } catch (err: unknown) {
+      const errorMsg = (err as any).response?.data?.error || "Receipt failed";
+      alert(errorMsg);
     }
   };
 
@@ -123,7 +118,7 @@ const Purchase = () => {
             placeholder="Search by vendor or order ID..." 
             className="w-full pl-10 pr-4 py-2 bg-faded-white border-none rounded-xl text-sm focus:ring-2 focus:ring-luxury-brown/20 outline-none transition-all font-medium"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
@@ -161,7 +156,7 @@ const Purchase = () => {
               <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3">
                 <p className="text-2xl font-bold text-luxury-brown">₹{o.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                 {o.status !== 'RECEIVED' ? (
-                  <Button size="sm" variant="primary" onClick={() => openReceiveModal(o)} className="font-bold">
+                  <Button variant="primary" onClick={() => openReceiveModal(o)} className="font-bold">
                     <Download className="w-4 h-4" /> Receive Items
                   </Button>
                 ) : (
@@ -173,10 +168,10 @@ const Purchase = () => {
             </div>
             
             <div className="mt-6 pt-6 border-t border-soft-cream grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               {o.orderLines.map((line: any) => (
+               {o.orderLines.map((line: PurchaseOrderLine) => (
                  <div key={line.id} className="bg-faded-white/50 p-3 rounded-xl flex flex-col gap-2 border border-soft-cream">
                     <div className="flex justify-between items-start gap-2">
-                       <span className="text-xs font-bold text-gray-700 leading-tight">{line.product.name}</span>
+                       <span className="text-xs font-bold text-gray-700 leading-tight">{line.product?.name}</span>
                        <span className="text-[11px] font-bold text-luxury-brown whitespace-nowrap">{line.receivedQty || 0} / {line.quantity}</span>
                     </div>
                     <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
@@ -208,7 +203,7 @@ const Purchase = () => {
             <select 
               className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
               value={newOrder.vendorId}
-              onChange={(e) => setNewOrder({...newOrder, vendorId: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewOrder({...newOrder, vendorId: e.target.value})}
               required
             >
               <option value="">Select a vendor...</option>
@@ -223,7 +218,7 @@ const Purchase = () => {
               <select 
                 className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
                 value={newOrder.productId}
-                onChange={(e) => setNewOrder({...newOrder, productId: e.target.value})}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewOrder({...newOrder, productId: e.target.value})}
                 required
               >
                 <option value="">Select a product...</option>
@@ -237,7 +232,7 @@ const Purchase = () => {
               type="number"
               min="1"
               value={newOrder.quantity}
-              onChange={(e: any) => setNewOrder({...newOrder, quantity: Number(e.target.value)})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrder({...newOrder, quantity: Number(e.target.value)})}
               required
             />
           </div>
@@ -252,14 +247,14 @@ const Purchase = () => {
         <form onSubmit={handleReceiveSubmit} className="space-y-6">
           <p className="text-sm text-warm-taupe font-medium italic">Enter the quantities physically received today:</p>
           <div className="space-y-3">
-            {selectedOrder?.orderLines.map((line: any) => (
+            {selectedOrder?.orderLines.map((line: PurchaseOrderLine) => (
               <div key={line.id} className="flex items-center justify-between p-4 bg-faded-white rounded-xl border border-soft-cream">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg border border-soft-cream shadow-sm">
                     <Package className="w-4 h-4 text-indigo-600" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-800 text-sm leading-tight">{line.product.name}</p>
+                    <p className="font-bold text-gray-800 text-sm leading-tight">{line.product?.name}</p>
                     <p className="text-[10px] text-warm-taupe/60 font-bold uppercase mt-0.5">Remaining to receive: {line.quantity - (line.receivedQty || 0)}</p>
                   </div>
                 </div>
@@ -270,7 +265,7 @@ const Purchase = () => {
                     max={line.quantity - (line.receivedQty || 0)}
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-luxury-brown bg-white text-center font-bold"
                     value={receiveQtys[line.id] || 0}
-                    onChange={(e: any) => setReceiveQtys({...receiveQtys, [line.id]: e.target.value})}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReceiveQtys({...receiveQtys, [line.id]: Number(e.target.value)})}
                   />
                 </div>
               </div>

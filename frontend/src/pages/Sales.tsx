@@ -1,25 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Plus, CheckCircle, Clock, ShoppingBag, Truck, AlertTriangle, Package, ChevronRight, Search } from 'lucide-react';
+import { Plus, CheckCircle, Clock, ShoppingBag, Truck, AlertTriangle, Package, Search } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-
-interface SalesOrder {
-  id: string;
-  customerName: string;
-  status: string;
-  totalAmount: number;
-  createdAt: string;
-  orderLines: any[];
-}
+import { SalesOrder, Product, SalesOrderLine } from '../types';
+import axios from 'axios';
 
 const Sales = () => {
   const [orders, setOrders] = useState<SalesOrder[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showDeliverModal, setShowDeliverModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
-  const [deliverQtys, setDeliverQtys] = useState<any>({});
+  const [deliverQtys, setDeliverQtys] = useState<Record<string, number>>({});
   const [searchTerm, setSearchTerm] = useState('');
 
   const [newOrder, setNewOrder] = useState({
@@ -49,6 +42,7 @@ const Sales = () => {
     e.preventDefault();
     try {
       const product = products.find(p => p.id === newOrder.productId);
+      if (!product) return;
       await api.post('/sales', {
         customerName: newOrder.customerName,
         orderLines: [{
@@ -60,8 +54,12 @@ const Sales = () => {
       setShowModal(false);
       setNewOrder({ customerName: '', productId: '', quantity: 1 });
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Failed to create sales order");
+    } catch (err: unknown) {
+      let errorMsg = "Failed to create sales order";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
@@ -69,14 +67,18 @@ const Sales = () => {
     try {
       await api.post(`/sales/${id}/confirm`);
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Confirmation failed. Check logs for shortages.");
+    } catch (err: unknown) {
+      let errorMsg = "Confirmation failed. Check logs for shortages.";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
   const openDeliverModal = (order: SalesOrder) => {
     setSelectedOrder(order);
-    const initialQtys: any = {};
+    const initialQtys: Record<string, number> = {};
     order.orderLines.forEach(line => {
       initialQtys[line.id] = line.quantity - (line.deliveredQty || 0);
     });
@@ -97,8 +99,12 @@ const Sales = () => {
       await api.post(`/sales/${selectedOrder.id}/deliver`, { items });
       setShowDeliverModal(false);
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Delivery failed");
+    } catch (err: unknown) {
+      let errorMsg = "Delivery failed";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      alert(errorMsg);
     }
   };
 
@@ -173,11 +179,11 @@ const Sales = () => {
               <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3">
                 <p className="text-2xl font-bold text-luxury-brown">₹{o.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                 {o.status === 'DRAFT' ? (
-                  <Button size="sm" onClick={() => handleConfirm(o.id)} className="font-bold">
+                  <Button onClick={() => handleConfirm(o.id)} className="font-bold">
                     <CheckCircle className="w-4 h-4" /> Confirm Order
                   </Button>
                 ) : (o.status === 'CONFIRMED' || o.status === 'PARTIALLY_DELIVERED') ? (
-                  <Button size="sm" variant="primary" onClick={() => openDeliverModal(o)} className="font-bold">
+                  <Button variant="primary" onClick={() => openDeliverModal(o)} className="font-bold">
                     <Truck className="w-4 h-4" /> Deliver Items
                   </Button>
                 ) : (
@@ -189,10 +195,10 @@ const Sales = () => {
             </div>
             
             <div className="mt-6 pt-6 border-t border-soft-cream grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               {o.orderLines.map((line: any) => (
+               {o.orderLines.map((line: SalesOrderLine) => (
                  <div key={line.id} className="bg-faded-white/50 p-3 rounded-xl flex flex-col gap-2 border border-soft-cream">
                     <div className="flex justify-between items-start gap-2">
-                       <span className="text-xs font-bold text-gray-700 leading-tight">{line.product.name}</span>
+                       <span className="text-xs font-bold text-gray-700 leading-tight">{line.product?.name}</span>
                        <span className="text-[11px] font-bold text-luxury-brown whitespace-nowrap">{line.deliveredQty || 0} / {line.quantity}</span>
                     </div>
                     <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
@@ -223,7 +229,7 @@ const Sales = () => {
             label="Customer Name" 
             placeholder="e.g. Acme Corp"
             value={newOrder.customerName}
-            onChange={(e: any) => setNewOrder({...newOrder, customerName: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrder({...newOrder, customerName: e.target.value})}
             required
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,7 +238,7 @@ const Sales = () => {
               <select 
                 className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
                 value={newOrder.productId}
-                onChange={(e) => setNewOrder({...newOrder, productId: e.target.value})}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewOrder({...newOrder, productId: e.target.value})}
                 required
               >
                 <option value="">Select a product...</option>
@@ -246,7 +252,7 @@ const Sales = () => {
               type="number"
               min="1"
               value={newOrder.quantity}
-              onChange={(e: any) => setNewOrder({...newOrder, quantity: Number(e.target.value)})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrder({...newOrder, quantity: Number(e.target.value)})}
               required
             />
           </div>
@@ -261,14 +267,14 @@ const Sales = () => {
         <form onSubmit={handleDeliverSubmit} className="space-y-6">
           <p className="text-sm text-warm-taupe font-medium italic">Enter quantities for this partial or full shipment:</p>
           <div className="space-y-3">
-            {selectedOrder?.orderLines.map((line: any) => (
+            {selectedOrder?.orderLines.map((line: SalesOrderLine) => (
               <div key={line.id} className="flex items-center justify-between p-4 bg-faded-white rounded-xl border border-soft-cream">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg border border-soft-cream shadow-sm">
                     <Package className="w-4 h-4 text-amber-600" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-800 text-sm leading-tight">{line.product.name}</p>
+                    <p className="font-bold text-gray-800 text-sm leading-tight">{line.product?.name}</p>
                     <p className="text-[10px] text-warm-taupe/60 font-bold uppercase mt-0.5">Remaining to ship: {line.quantity - (line.deliveredQty || 0)}</p>
                   </div>
                 </div>
@@ -279,7 +285,7 @@ const Sales = () => {
                     max={line.quantity - (line.deliveredQty || 0)}
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none focus:border-luxury-brown bg-white text-center font-bold"
                     value={deliverQtys[line.id] || 0}
-                    onChange={(e: any) => setDeliverQtys({...deliverQtys, [line.id]: e.target.value})}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDeliverQtys({...deliverQtys, [line.id]: Number(e.target.value)})}
                   />
                 </div>
               </div>

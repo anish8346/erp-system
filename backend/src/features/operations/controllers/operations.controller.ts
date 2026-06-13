@@ -7,9 +7,10 @@ export class OperationsController {
     try {
       const bom = await OperationsService.createBoM(req.body);
       res.status(201).json(bom);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to create BoM.';
       console.error("BoM Creation Error:", error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: message });
     }
   }
 
@@ -17,8 +18,9 @@ export class OperationsController {
     try {
       const boms = await OperationsService.getBoMs();
       res.json(boms);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to retrieve BoMs.';
+      res.status(500).json({ error: message });
     }
   }
 
@@ -37,7 +39,7 @@ export class OperationsController {
       });
 
       res.status(201).json(mo);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CreateMO Error]:', error);
       res.status(500).json({ error: 'Failed to create manufacturing order.' });
     }
@@ -48,9 +50,10 @@ export class OperationsController {
       const id = req.params.id as string;
       const result = await OperationsService.produceMO(id, req.user?.id);
       res.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to finalize production.';
       console.error('[ProduceMO Error]:', error);
-      res.status(500).json({ error: error.message || 'Failed to finalize production.' });
+      res.status(500).json({ error: message });
     }
   }
 
@@ -60,7 +63,7 @@ export class OperationsController {
       const { status } = req.body;
       const wo = await OperationsService.updateWorkOrderStatus(id, status, req.user?.id);
       res.json(wo);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[UpdateWOStatus Error]:', error);
       res.status(500).json({ error: 'Failed to update work step status.' });
     }
@@ -70,7 +73,7 @@ export class OperationsController {
     try {
       const mos = await OperationsService.getMOs();
       res.json(mos);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[GetMOs Error]:', error);
       res.status(500).json({ error: 'Failed to retrieve manufacturing orders.' });
     }

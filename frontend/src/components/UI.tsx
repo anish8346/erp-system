@@ -1,7 +1,14 @@
 
 import React from 'react';
 
-export const Card = ({ children, title, subtitle, className = "" }: any) => (
+interface CardProps {
+  children: React.ReactNode;
+  title?: string;
+  subtitle?: string;
+  className?: string;
+}
+
+export const Card = ({ children, title, subtitle, className = "" }: CardProps) => (
   <div className={`bg-white rounded-xl shadow-sm border border-soft-cream overflow-hidden ${className}`}>
     {(title || subtitle) && (
       <div className="px-6 py-4 border-b border-soft-cream bg-faded-white/50">
@@ -13,8 +20,14 @@ export const Card = ({ children, title, subtitle, className = "" }: any) => (
   </div>
 );
 
-export const Button = ({ children, variant = "primary", className = "", ...props }: any) => {
-  const variants: any = {
+type ButtonVariant = "primary" | "secondary" | "danger" | "success" | "ghost" | "gold";
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+}
+
+export const Button = ({ children, variant = "primary", className = "", ...props }: ButtonProps) => {
+  const variants: Record<ButtonVariant, string> = {
     primary: "bg-luxury-brown hover:bg-[#3a2c20] text-white shadow-sm",
     secondary: "bg-white border border-soft-cream text-warm-taupe hover:bg-faded-white",
     danger: "bg-rose-600 hover:bg-rose-700 text-white",
@@ -33,7 +46,12 @@ export const Button = ({ children, variant = "primary", className = "", ...props
   );
 };
 
-export const Input = ({ label, error, className = "", ...props }: any) => (
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  error?: string;
+}
+
+export const Input = ({ label, error, className = "", ...props }: InputProps) => (
   <div className="flex flex-col gap-1.5 w-full">
     {label && <label className="text-xs font-bold text-luxury-brown ml-1">{label}</label>}
     <input 
@@ -44,8 +62,15 @@ export const Input = ({ label, error, className = "", ...props }: any) => (
   </div>
 );
 
-export const Badge = ({ children, variant = "neutral" }: any) => {
-  const variants: any = {
+type BadgeVariant = "neutral" | "primary" | "success" | "warning" | "danger" | "purple" | "gold";
+
+interface BadgeProps {
+  children: React.ReactNode;
+  variant?: BadgeVariant;
+}
+
+export const Badge = ({ children, variant = "neutral" }: BadgeProps) => {
+  const variants: Record<BadgeVariant, string> = {
     neutral: "bg-faded-white text-warm-taupe border-soft-cream",
     primary: "bg-luxury-brown text-white border-luxury-brown",
     success: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -62,7 +87,14 @@ export const Badge = ({ children, variant = "neutral" }: any) => {
   );
 };
 
-export const Modal = ({ isOpen, onClose, title, children }: any) => {
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}
+
+export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-luxury-brown/20 backdrop-blur-sm animate-in fade-in duration-200">
