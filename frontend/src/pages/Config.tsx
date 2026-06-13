@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Settings, Plus, LayoutGrid, Globe, CreditCard, Layers } from 'lucide-react';
 import { Button, Card, Input, Badge } from '../components/UI';
+import type { WorkCenter } from '../types';
 
 const Config = () => {
-  const [workCenters, setWorkCenters] = useState<any[]>([]);
+  const [workCenters, setWorkCenters] = useState<WorkCenter[]>([]);
   const [newWC, setNewWC] = useState('');
 
   const fetchWCs = async () => {
@@ -52,7 +53,7 @@ const Config = () => {
               <Input 
                 placeholder="e.g. Assembly Line A" 
                 value={newWC}
-                onChange={(e: any) => setNewWC(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewWC(e.target.value)}
                 required
               />
             </div>
@@ -64,7 +65,7 @@ const Config = () => {
           </form>
 
           <div className="space-y-3">
-            {workCenters.map((wc) => (
+            {workCenters.map((wc: WorkCenter) => (
               <div key={wc.id} className="bg-faded-white px-4 py-3 rounded-xl border border-soft-cream flex justify-between items-center group hover:bg-white hover:shadow-sm transition-all">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white rounded-lg border border-soft-cream shadow-xs group-hover:border-luxury-brown/30 transition-colors">

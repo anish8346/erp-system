@@ -1,78 +1,81 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import type { AuthRequest } from '../../../core/middlewares/authMiddleware.js';
 import { OperationsService } from '../services/operations.service.js';
 
 export class OperationsController {
-  static async createBoM(req: Request, res: Response) {
-    try {
-      const bom = await OperationsService.createBoM(req.body);
-      res.status(201).json(bom);
-    } catch (error: any) {
-      console.error("BoM Creation Error:", error);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async getBoMs(req: Request, res: Response) {
-    try {
-      const boms = await OperationsService.getBoMs();
-      res.json(boms);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
   static async createMO(req: AuthRequest, res: Response) {
     try {
-      const { productId, quantity, bomId } = req.body;
-      if (!productId || !bomId) {
-        return res.status(400).json({ error: 'Product and BoM are required to plan production.' });
-      }
-      
-      const mo = await OperationsService.createMO({
-          productId,
-          quantity,
-          bomId,
-          userId: req.user?.id
-      });
-
+      const mo = await OperationsService.createMO(req.body, req.user?.id);
       res.status(201).json(mo);
-    } catch (error: any) {
-      console.error('[CreateMO Error]:', error);
-      res.status(500).json({ error: 'Failed to create manufacturing order.' });
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  static async confirmMO(req: AuthRequest, res: Response) {
+    try {
+      const mo = await OperationsService.confirmMO(req.params.id, req.user?.id);
+      res.json(mo);
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
     }
   }
 
   static async produceMO(req: AuthRequest, res: Response) {
     try {
-      const id = req.params.id as string;
-      const result = await OperationsService.produceMO(id, req.user?.id);
+      const result = await OperationsService.produceMO(req.params.id, req.user?.id);
       res.json(result);
-    } catch (error: any) {
-      console.error('[ProduceMO Error]:', error);
-      res.status(500).json({ error: error.message || 'Failed to finalize production.' });
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  static async cancelMO(req: AuthRequest, res: Response) {
+    try {
+      const mo = await OperationsService.cancelMO(req.params.id, req.user?.id);
+      res.json(mo);
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  static async getMOs(req: AuthRequest, res: Response) {
+    try {
+      const mos = await OperationsService.getMOs();
+      res.json(mos);
+    } catch (error: unknown) {
+      console.error('[GetMOs Error]:', error);
+      res.status(500).json({ error: 'Failed to fetch manufacturing orders.' });
     }
   }
 
   static async updateWorkOrderStatus(req: AuthRequest, res: Response) {
     try {
-      const id = req.params.id as string;
       const { status } = req.body;
-      const wo = await OperationsService.updateWorkOrderStatus(id, status, req.user?.id);
+      const wo = await OperationsService.updateWorkOrderStatus(req.params.id, status, req.user?.id);
       res.json(wo);
-    } catch (error: any) {
-      console.error('[UpdateWOStatus Error]:', error);
-      res.status(500).json({ error: 'Failed to update work step status.' });
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
     }
   }
 
-  static async getMOs(req: Request, res: Response) {
+  static async updateWorkOrderDuration(req: AuthRequest, res: Response) {
     try {
-      const mos = await OperationsService.getMOs();
-      res.json(mos);
-    } catch (error: any) {
-      console.error('[GetMOs Error]:', error);
-      res.status(500).json({ error: 'Failed to retrieve manufacturing orders.' });
+      const { realDuration } = req.body;
+      const wo = await OperationsService.updateWorkOrderDuration(req.params.id, realDuration, req.user?.id);
+      res.json(wo);
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  static async updateComponentConsumed(req: AuthRequest, res: Response) {
+    try {
+      const { consumed } = req.body;
+      const comp = await OperationsService.updateComponentConsumed(req.params.id, consumed, req.user?.id);
+      res.json(comp);
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
     }
   }
 }

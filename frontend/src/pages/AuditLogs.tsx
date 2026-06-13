@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { ShieldCheck, Search, Filter, Clock, User } from 'lucide-react';
 import { Card, Badge, Button } from '../components/UI';
+import type { AuditLog } from '../types';
 
 const AuditLogs = () => {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -21,7 +22,7 @@ const AuditLogs = () => {
   }, []);
 
   const filteredLogs = logs.filter(log => 
-    log.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (log.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.entityType.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.details.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,7 +85,7 @@ const AuditLogs = () => {
                       <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center border border-soft-cream">
                         <User className="w-4 h-4 text-warm-taupe" />
                       </div>
-                      <span className="text-sm font-bold text-gray-700">{log.user.name}</span>
+                      <span className="text-sm font-bold text-gray-700">{log.user?.name || 'System'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">

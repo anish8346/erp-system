@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../services/api';
 import { Inbox, Check, X, Building, Mail, MessageSquare, Clock, ShieldQuestion } from 'lucide-react';
 import { Button, Card, Badge } from '../components/UI';
+import type { AccessRequest } from '../types';
 
 const Requests = () => {
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
 
   const fetchRequests = async () => {
     try {
@@ -24,8 +26,12 @@ const Requests = () => {
     try {
       await api.patch(`/requests/${id}`, { status });
       fetchRequests();
-    } catch (err) {
-      alert("Failed to update status");
+    } catch (err: unknown) {
+      let errorMsg = "Failed to update status";
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      }
+      alert(errorMsg);
     }
   };
 

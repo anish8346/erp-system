@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
 import { LayoutDashboard, Package, ShoppingCart, Truck, Factory, History, ListTree, LogOut, Settings, Inbox, ShieldAlert, UserPlus, Sofa } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -16,10 +16,11 @@ import Users from './pages/Users';
 import Requests from './pages/Requests';
 import Vendors from './pages/Vendors';
 import LandingPage from './pages/LandingPage';
+import type { User } from './types';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(() => {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
@@ -36,7 +37,7 @@ function App() {
     return user && (user.role === 'ADMIN' || roles.includes(user.role));
   };
 
-  if (!token) {
+  if (!token || !user) {
     return (
       <Router>
         <Routes>
@@ -66,39 +67,39 @@ function App() {
           <nav className="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-white/30 mb-2 mt-4">Operations</p>
             
-            <NavItem to="/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
+            <NavItem to="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Dashboard" />
             
             {canAccess(['INVENTORY', 'OWNER']) && (
-              <NavItem to="/dashboard/products" icon={<Package />} label="Inventory" />
+              <NavItem to="/dashboard/products" icon={<Package className="w-4 h-4" />} label="Inventory" />
             )}
 
             {canAccess(['MFG', 'OWNER']) && (
               <>
-                <NavItem to="/dashboard/boms" icon={<ListTree />} label="BoM Engineering" />
-                <NavItem to="/dashboard/manufacturing" icon={<Factory />} label="Manufacturing" />
+                <NavItem to="/dashboard/boms" icon={<ListTree className="w-4 h-4" />} label="BoM Engineering" />
+                <NavItem to="/dashboard/manufacturing" icon={<Factory className="w-4 h-4" />} label="Manufacturing" />
               </>
             )}
 
             {canAccess(['SALES', 'OWNER']) && (
-              <NavItem to="/dashboard/sales" icon={<ShoppingCart />} label="Sales Orders" />
+              <NavItem to="/dashboard/sales" icon={<ShoppingCart className="w-4 h-4" />} label="Sales Orders" />
             )}
 
             {canAccess(['PURCHASE', 'OWNER']) && (
               <>
-                <NavItem to="/dashboard/purchase" icon={<Truck />} label="Procurement" />
-                <NavItem to="/dashboard/vendors" icon={<UserPlus />} label="Vendors" />
+                <NavItem to="/dashboard/purchase" icon={<Truck className="w-4 h-4" />} label="Procurement" />
+                <NavItem to="/dashboard/vendors" icon={<UserPlus className="w-4 h-4" />} label="Vendors" />
               </>
             )}
 
-            <NavItem to="/dashboard/ledger" icon={<History />} label="Stock Ledger" />
+            <NavItem to="/dashboard/ledger" icon={<History className="w-4 h-4" />} label="Stock Ledger" />
 
             {user.role === 'ADMIN' && (
               <div className="pt-4 mt-4 border-t border-white/10 space-y-1">
                 <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-white/30 mb-2">System</p>
-                <NavItem to="/dashboard/requests" icon={<Inbox />} label="Access Requests" />
-                <NavItem to="/dashboard/users" icon={<UserPlus />} label="Staff Management" />
-                <NavItem to="/dashboard/audit-logs" icon={<ShieldAlert />} label="Audit Logs" />
-                <NavItem to="/dashboard/config" icon={<Settings />} label="Configuration" />
+                <NavItem to="/dashboard/requests" icon={<Inbox className="w-4 h-4" />} label="Access Requests" />
+                <NavItem to="/dashboard/users" icon={<UserPlus className="w-4 h-4" />} label="Staff Management" />
+                <NavItem to="/dashboard/audit-logs" icon={<ShieldAlert className="w-4 h-4" />} label="Audit Logs" />
+                <NavItem to="/dashboard/config" icon={<Settings className="w-4 h-4" />} label="Configuration" />
               </div>
             )}
           </nav>
@@ -127,7 +128,7 @@ function App() {
         <main className="flex-1 overflow-y-auto relative custom-scrollbar">
            <div className="max-w-6xl mx-auto p-8 lg:p-12 min-h-full">
               <Routes>
-                <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<div className="animate-in fade-in duration-500"><Outlet /></div>}>
                   <Route index element={<Dashboard />} />
                   <Route path="products" element={<Products />} />
                   <Route path="boms" element={<Boms />} />
@@ -150,25 +151,20 @@ function App() {
   );
 }
 
-const DashboardLayout = () => {
-  return (
-    <div className="animate-in fade-in duration-500">
-      <Outlet />
-    </div>
-  );
-};
+interface NavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+}
 
-// Reusable NavItem for consistent professional styling
-const NavItem = ({ to, icon, label }: any) => (
+const NavItem = ({ to, icon, label }: NavItemProps) => (
   <Link 
     to={to} 
     className="flex items-center gap-3 px-3 py-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-lg transition-all group font-semibold text-[14px]"
   >
-    {React.cloneElement(icon, { className: "w-4 h-4 group-hover:scale-110 transition-transform" })}
+    {icon}
     <span>{label}</span>
   </Link>
 );
-
-import { Outlet } from 'react-router-dom';
 
 export default App;

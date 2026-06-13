@@ -1,7 +1,8 @@
 import { inventoryRepository } from '../repositories/inventory.repository.js';
 import { logActivity } from '../../../core/utils/logger.js';
+import type { CreateProductData, UpdateProductData } from '../../../core/types/index.js';
 
-export const createProduct = async (data: any, userId?: string) => {
+export const createProduct = async (data: CreateProductData, userId?: string) => {
   if (!data.name) throw new Error('Product name is required.');
 
   const product = await inventoryRepository.createProduct(data);
@@ -27,7 +28,7 @@ export const getProductById = async (id: string) => {
   return product;
 };
 
-export const updateProduct = async (id: string, data: any, userId?: string) => {
+export const updateProduct = async (id: string, data: UpdateProductData, userId?: string) => {
   const product = await inventoryRepository.updateProduct(id, data);
 
   if (userId) {

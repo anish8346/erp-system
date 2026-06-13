@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Sofa } from 'lucide-react';
 import { Button, Input } from '../components/UI';
+import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,8 +19,12 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       window.location.href = '/dashboard'; 
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials or connection error.');
+    } catch (err: unknown) {
+      let errorMsg = 'Invalid credentials or connection error.';
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
+      }
+      setError(errorMsg);
     }
   };
 
@@ -52,7 +57,7 @@ const Login = () => {
             type="email" 
             placeholder="name@shivfurniture.com"
             value={email}
-            onChange={(e: any) => setEmail(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
             required
           />
           <Input 
@@ -60,7 +65,7 @@ const Login = () => {
             type="password" 
             placeholder="••••••••"
             value={password}
-            onChange={(e: any) => setPassword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             required
           />
           <Button 

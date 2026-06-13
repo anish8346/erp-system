@@ -11,8 +11,15 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 
+interface ScrollRevealProps {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+  variant?: 'fade-up' | 'fade-in' | 'slide-left' | 'slide-right' | 'scale-in';
+}
+
 // Reusable ScrollReveal wrapper component utilizing IntersectionObserver
-const ScrollReveal = ({ children, className = "", delay = 0, variant = "fade-up" }: any) => {
+const ScrollReveal = ({ children, className = "", delay = 0, variant = "fade-up" }: ScrollRevealProps) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = React.useState(false);
 
@@ -79,8 +86,13 @@ const ScrollReveal = ({ children, className = "", delay = 0, variant = "fade-up"
   );
 };
 
+interface AnimatedCounterProps {
+  endValue: string;
+  duration?: number;
+}
+
 // Viewport-aware counter that runs numbers up from 0 to the target value
-const AnimatedCounter = ({ endValue, duration = 1200 }: any) => {
+const AnimatedCounter = ({ endValue, duration = 1200 }: AnimatedCounterProps) => {
   const [count, setCount] = React.useState(0);
   const ref = React.useRef<HTMLSpanElement>(null);
   const [isVisible, setIsVisible] = React.useState(false);
@@ -319,7 +331,7 @@ const LandingPage = () => {
                         setIsModalOpen(true);
                       }
                     }}
-                    className="px-8 py-3.5 text-xs font-bold bg-[#FF7A00] hover:bg-[#d96500] text-white rounded-lg shadow-lg shadow-[#FF7A00]/10 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer uppercase tracking-wider"
+                    className="px-8 py-3.5 text-xs font-bold bg-[#FF7A00] hover:bg-[#d96500] text-white rounded-lg shadow-lg shadow-[#FF7A00]/10 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
                   >
                     Get Started
                   </button>
@@ -505,7 +517,13 @@ const LandingPage = () => {
   );
 };
 
-const Modal = ({ isOpen, onClose, children }: any) => {
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+const Modal = ({ isOpen, onClose, children }: ModalProps) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
@@ -532,7 +550,11 @@ const Modal = ({ isOpen, onClose, children }: any) => {
   );
 };
 
-const RequestForm = ({ onSuccess }: any) => {
+interface RequestFormProps {
+  onSuccess?: () => void;
+}
+
+const RequestForm = ({ onSuccess }: RequestFormProps) => {
   const [formData, setFormData] = React.useState({ name: '', email: '', company: '', message: '' });
   const [submitted, setSubmitted] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
@@ -544,7 +566,7 @@ const RequestForm = ({ onSuccess }: any) => {
       await api.post('/requests/submit', formData);
       setSubmitted(true);
       if (onSuccess) onSuccess();
-    } catch (err) {
+    } catch (err: unknown) {
       alert("Failed to submit request.");
     } finally {
       setLoading(false);
@@ -575,7 +597,7 @@ const RequestForm = ({ onSuccess }: any) => {
               type="text"
               placeholder="Full Name" 
               value={formData.name}
-              onChange={(e: any) => setFormData({...formData, name: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
               required
               className={inputClass}
             />
@@ -585,7 +607,7 @@ const RequestForm = ({ onSuccess }: any) => {
               type="email"
               placeholder="Email Address" 
               value={formData.email}
-              onChange={(e: any) => setFormData({...formData, email: e.target.value})}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
               required
               className={inputClass}
             />
@@ -596,7 +618,7 @@ const RequestForm = ({ onSuccess }: any) => {
             type="text"
             placeholder="Company Name" 
             value={formData.company}
-            onChange={(e: any) => setFormData({...formData, company: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, company: e.target.value})}
             required
             className={inputClass}
          />
@@ -606,7 +628,7 @@ const RequestForm = ({ onSuccess }: any) => {
             placeholder="Why do you need access? (e.g. Sales Department)"
             className={`${inputClass} h-28 resize-none leading-relaxed`}
             value={formData.message}
-            onChange={(e) => setFormData({...formData, message: e.target.value})}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({...formData, message: e.target.value})}
             required
          ></textarea>
        </div>

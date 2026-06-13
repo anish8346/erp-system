@@ -6,9 +6,10 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
     const product = await inventoryService.createProduct(req.body, req.user?.id);
     res.status(201).json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to create product.';
     console.error('[CreateProduct Error]:', error);
-    res.status(error.message === 'Product name is required.' ? 400 : 500).json({ error: error.message || 'Failed to create product.' });
+    res.status(message === 'Product name is required.' ? 400 : 500).json({ error: message });
   }
 };
 
@@ -16,7 +17,7 @@ export const getProducts = async (req: Request, res: Response) => {
   try {
     const products = await inventoryService.getAllProducts();
     res.json(products);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[GetProducts Error]:', error);
     res.status(500).json({ error: 'Failed to fetch inventory list.' });
   }
@@ -26,9 +27,10 @@ export const getProductById = async (req: Request, res: Response) => {
   try {
     const product = await inventoryService.getProductById(req.params.id);
     res.json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error retrieving product details.';
     console.error('[GetProductById Error]:', error);
-    res.status(error.message === 'Product not found.' ? 404 : 500).json({ error: error.message || 'Error retrieving product details.' });
+    res.status(message === 'Product not found.' ? 404 : 500).json({ error: message });
   }
 };
 
@@ -36,7 +38,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
     const product = await inventoryService.updateProduct(req.params.id, req.body, req.user?.id);
     res.json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[UpdateProduct Error]:', error);
     res.status(500).json({ error: 'Failed to update product details.' });
   }
@@ -46,9 +48,10 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
   try {
     await inventoryService.deleteProduct(req.params.id, req.user?.id);
     res.json({ message: 'Product deleted successfully.' });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'System could not delete the product.';
     console.error('[DeleteProduct Error]:', error);
-    res.status(error.message.includes('Cannot delete') ? 400 : 500).json({ error: error.message || 'System could not delete the product.' });
+    res.status(message.includes('Cannot delete') ? 400 : 500).json({ error: message });
   }
 };
 
@@ -57,9 +60,10 @@ export const adjustStock = async (req: AuthRequest, res: Response) => {
     const { adjustment, reason } = req.body;
     const product = await inventoryService.adjustStock(req.params.id, Number(adjustment), reason, req.user?.id);
     res.json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to apply stock adjustment.';
     console.error('[AdjustStock Error]:', error);
-    res.status(error.message.includes('valid adjustment') ? 400 : 500).json({ error: error.message || 'Failed to apply stock adjustment.' });
+    res.status(message.includes('valid adjustment') ? 400 : 500).json({ error: message });
   }
 };
 
@@ -67,7 +71,7 @@ export const getStockLedger = async (req: Request, res: Response) => {
   try {
     const ledger = await inventoryService.getStockLedger();
     res.json(ledger);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[GetLedger Error]:', error);
     res.status(500).json({ error: 'Failed to retrieve stock ledger.' });
   }

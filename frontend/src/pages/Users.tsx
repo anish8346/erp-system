@@ -1,26 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../services/api';
-import { UserPlus, UserCircle2, Mail, ShieldCheck, Search, Clock, Shield } from 'lucide-react';
+import { UserPlus, UserCircle2, Mail, Search, Clock, Shield } from 'lucide-react';
 import { Button, Card, Input, Modal, Badge } from '../components/UI';
+import type { User, UserRole } from '../types';
 
 const Users = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'SALES'
+    role: 'SALES' as UserRole
   });
 
   const fetchUsers = async () => {
     try {
       const res = await api.get('/config/users');
       setUsers(res.data);
-    } catch (err) {
-      console.error("Failed to fetch users");
+    } catch (err: unknown) {
+      console.error("Failed to fetch users", err);
     }
   };
 
@@ -65,7 +67,7 @@ const Users = () => {
             placeholder="Search users by name, email or role..." 
             className="w-full pl-10 pr-4 py-2 bg-faded-white border-none rounded-xl text-sm focus:ring-2 focus:ring-luxury-brown/20 outline-none transition-all font-medium"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
@@ -87,7 +89,7 @@ const Users = () => {
                       {user.role}
                     </Badge>
                     <div className="flex items-center gap-1 text-[10px] text-warm-taupe/60 font-bold uppercase tracking-tight">
-                      <Clock className="w-3 h-3" /> {new Date(user.createdAt).toLocaleDateString()}
+                      <Clock className="w-3 h-3" /> {(user as { createdAt?: string }).createdAt && new Date((user as { createdAt?: string }).createdAt!).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -110,7 +112,7 @@ const Users = () => {
                label="Full Name" 
                placeholder="Employee Name"
                value={formData.name}
-               onChange={(e: any) => setFormData({...formData, name: e.target.value})}
+               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, name: e.target.value})}
                required
              />
              <Input 
@@ -118,7 +120,7 @@ const Users = () => {
                type="email"
                placeholder="employee@shivfurniture.com"
                value={formData.email}
-               onChange={(e: any) => setFormData({...formData, email: e.target.value})}
+               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, email: e.target.value})}
                required
              />
              <Input 
@@ -126,7 +128,7 @@ const Users = () => {
                type="password"
                placeholder="••••••••"
                value={formData.password}
-               onChange={(e: any) => setFormData({...formData, password: e.target.value})}
+               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, password: e.target.value})}
                required
              />
              <div className="flex flex-col gap-1.5">
@@ -135,7 +137,7 @@ const Users = () => {
                   <select 
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm font-medium appearance-none"
                     value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({...formData, role: e.target.value as UserRole})}
                   >
                     <option value="ADMIN">Master Admin</option>
                     <option value="OWNER">Business Owner</option>

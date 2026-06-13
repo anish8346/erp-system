@@ -2,11 +2,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { logActivity } from '../../../core/utils/logger.js';
+import type { RegisterData, LoginData } from '../../../core/types/index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 export class AuthService {
-  static async registerUser(data: any) {
+  static async registerUser(data: RegisterData) {
     const { email, password, name, role } = data;
     
     const existing = await AuthRepository.findUserByEmail(email);
@@ -27,8 +28,9 @@ export class AuthService {
     return user;
   }
 
-  static async loginUser(data: any) {
+  static async loginUser(data: LoginData) {
     const { email, password } = data;
+    if (!password) throw new Error('Password is required.');
 
     const user = await AuthRepository.findUserByEmail(email);
 
