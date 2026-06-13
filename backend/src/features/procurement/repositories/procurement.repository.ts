@@ -8,20 +8,24 @@ interface PurchaseOrderLineInput {
 }
 
 interface CreatePurchaseOrderInput {
-  vendorId?: string;
+  vendorId: string;
   vendorName: string;
+  vendorAddress?: string;
+  responsiblePersonId?: string;
   orderLines: PurchaseOrderLineInput[];
 }
 
 export class ProcurementRepository {
   static async createPurchaseOrder(data: CreatePurchaseOrderInput) {
-    const { vendorId, vendorName, orderLines } = data;
+    const { vendorId, vendorName, vendorAddress, responsiblePersonId, orderLines } = data;
     const totalAmount = orderLines.reduce((acc: number, line: PurchaseOrderLineInput) => acc + (Number(line.quantity) * Number(line.price)), 0);
     
     return await prisma.purchaseOrder.create({
       data: {
         vendorId,
         vendorName,
+        vendorAddress,
+        responsiblePersonId,
         status: 'DRAFT',
         totalAmount,
         orderLines: {
@@ -32,20 +36,24 @@ export class ProcurementRepository {
           })),
         },
       },
-      include: { orderLines: true },
+      include: { orderLines: true, vendor: true, responsiblePerson: true },
     });
   }
 
   static async findPurchaseOrderById(id: string) {
     return await prisma.purchaseOrder.findUnique({
       where: { id },
-      include: { orderLines: true },
+      include: { orderLines: { include: { product: true } }, vendor: true, responsiblePerson: true },
     });
   }
 
   static async getPurchaseOrders() {
     return await prisma.purchaseOrder.findMany({
-      include: { orderLines: { include: { product: true } } },
+      include: { 
+        orderLines: { include: { product: true } },
+        vendor: true,
+        responsiblePerson: true
+      },
       orderBy: { createdAt: 'desc' }
     });
   }

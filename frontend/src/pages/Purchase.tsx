@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../services/api';
-import { Plus, Download, Truck, ShoppingCart, Package, Search, Clock } from 'lucide-react';
+import { Plus, Download, Truck, ShoppingCart, Package, Search, Clock, ArrowLeft, CheckCircle, XCircle, User as UserIcon, MapPin, Trash2 } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-import type { PurchaseOrder, Product, Vendor, PurchaseOrderLine } from '../types';
+import type { PurchaseOrder, Product, Vendor, PurchaseOrderLine, User } from '../types';
 
 const Purchase = () => {
+  const [view, setView] = useState<'list' | 'form'>('list');
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [receiveQtys, setReceiveQtys] = useState<Record<string, number>>({});
@@ -18,20 +19,23 @@ const Purchase = () => {
 
   const [newOrder, setNewOrder] = useState({
     vendorId: '',
-    productId: '',
-    quantity: 1,
+    vendorAddress: '',
+    responsiblePersonId: '',
+    orderLines: [{ productId: '', quantity: 1, price: 0 }]
   });
 
   const fetchData = async () => {
     try {
-      const [ordersRes, productsRes, vendorsRes] = await Promise.all([
+      const [ordersRes, productsRes, vendorsRes, usersRes] = await Promise.all([
         api.get('/purchase'),
         api.get('/products'),
         api.get('/vendors'),
+        api.get('/users'),
       ]);
       setOrders(ordersRes.data);
       setProducts(productsRes.data);
       setVendors(vendorsRes.data);
+      setUsers(usersRes.data);
     } catch (err) {
       console.error("Fetch data failed", err);
     }
@@ -41,24 +45,55 @@ const Purchase = () => {
     fetchData();
   }, []);
 
+  const handleVendorChange = (vendorId: string) => {
+    const vendor = vendors.find(v => v.id === vendorId);
+    setNewOrder({
+      ...newOrder,
+      vendorId,
+      vendorAddress: vendor?.address || ''
+    });
+  };
+
+  const addOrderLine = () => {
+    setNewOrder({
+      ...newOrder,
+      orderLines: [...newOrder.orderLines, { productId: '', quantity: 1, price: 0 }]
+    });
+  };
+
+  const removeOrderLine = (index: number) => {
+    const lines = [...newOrder.orderLines];
+    lines.splice(index, 1);
+    setNewOrder({ ...newOrder, orderLines: lines });
+  };
+
+  const handleLineChange = (index: number, field: string, value: any) => {
+    const lines = [...newOrder.orderLines];
+    if (field === 'productId') {
+      const product = products.find(p => p.id === value);
+      lines[index] = { ...lines[index], productId: value, price: product?.costPrice || 0 };
+    } else {
+      lines[index] = { ...lines[index], [field]: value };
+    }
+    setNewOrder({ ...newOrder, orderLines: lines });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const product = products.find(p => p.id === newOrder.productId);
       const vendor = vendors.find(v => v.id === newOrder.vendorId);
-      if (!product) return;
       
       await api.post('/purchase', {
-        vendorId: newOrder.vendorId,
+        ...newOrder,
         vendorName: vendor?.name || 'Unknown',
-        orderLines: [{
-          productId: newOrder.productId,
-          quantity: newOrder.quantity,
-          price: product.costPrice,
-        }]
       });
-      setShowForm(false);
-      setNewOrder({ vendorId: '', productId: '', quantity: 1 });
+      setView('list');
+      setNewOrder({
+        vendorId: '',
+        vendorAddress: '',
+        responsiblePersonId: '',
+        orderLines: [{ productId: '', quantity: 1, price: 0 }]
+      });
       fetchData();
     } catch (err: unknown) {
       let errorMsg = "Failed to create procurement order";
@@ -66,6 +101,25 @@ const Purchase = () => {
         errorMsg = err.response.data.error;
       }
       alert(errorMsg);
+    }
+  };
+
+  const handleConfirm = async (id: string) => {
+    try {
+      await api.post(`/purchase/${id}/confirm`);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to confirm order");
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    try {
+      await api.post(`/purchase/${id}/cancel`);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to cancel order");
     }
   };
 
@@ -106,6 +160,149 @@ const Purchase = () => {
     o.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const calculateTotal = (lines: any[]) => {
+      return lines.reduce((acc, line) => acc + (line.quantity * line.price), 0);
+  };
+
+  if (view === 'form') {
+    return (
+      <div className="space-y-6 animate-in slide-in-from-right duration-300">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setView('list')} className="p-2 hover:bg-soft-cream rounded-full transition-colors">
+            <ArrowLeft className="w-6 h-6 text-luxury-brown" />
+          </button>
+          <h2 className="text-3xl font-bold text-luxury-brown">Create Purchase Order</h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-700 ml-1">Vendor</label>
+                  <select 
+                    className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
+                    value={newOrder.vendorId}
+                    onChange={(e) => handleVendorChange(e.target.value)}
+                    required
+                  >
+                    <option value="">Select a vendor...</option>
+                    {vendors.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <Input 
+                  label="Vendor Address"
+                  value={newOrder.vendorAddress}
+                  onChange={(e) => setNewOrder({...newOrder, vendorAddress: e.target.value})}
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-700 ml-1">Responsible Person</label>
+                  <select 
+                    className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
+                    value={newOrder.responsiblePersonId}
+                    onChange={(e) => setNewOrder({...newOrder, responsiblePersonId: e.target.value})}
+                    required
+                  >
+                    <option value="">Select a person...</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-700 ml-1">Creation Date</label>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    className="px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm font-medium text-gray-500 cursor-not-allowed"
+                    value={new Date().toLocaleString()}
+                  />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-luxury-brown">Products</h3>
+              <Button type="button" variant="secondary" onClick={addOrderLine} size="sm">
+                <Plus className="w-4 h-4 mr-1" /> Add Line
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {newOrder.orderLines.map((line, index) => (
+                <div key={index} className="flex flex-col md:flex-row gap-4 items-end pb-4 border-b border-soft-cream last:border-0">
+                  <div className="flex-1 space-y-1.5 min-w-[200px]">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Product</label>
+                    <select 
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                      value={line.productId}
+                      onChange={(e) => handleLineChange(index, 'productId', e.target.value)}
+                      required
+                    >
+                      <option value="">Select product...</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="w-32 space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Quantity</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                      value={line.quantity}
+                      onChange={(e) => handleLineChange(index, 'quantity', Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                  <div className="w-32 space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Unit Price</label>
+                    <input 
+                      type="number"
+                      readOnly
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 font-semibold"
+                      value={line.price}
+                    />
+                  </div>
+                  <div className="w-32 space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Subtotal</label>
+                    <div className="w-full px-4 py-2 bg-faded-white rounded-lg text-sm font-bold text-luxury-brown">
+                      ₹{(line.quantity * line.price).toLocaleString()}
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => removeOrderLine(index)}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end">
+                <div className="bg-luxury-brown text-white px-6 py-3 rounded-xl">
+                    <span className="text-sm opacity-80 font-medium mr-4">Total Amount:</span>
+                    <span className="text-xl font-bold">₹{calculateTotal(newOrder.orderLines).toLocaleString()}</span>
+                </div>
+            </div>
+          </Card>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" type="button" onClick={() => setView('list')}>Cancel</Button>
+            <Button type="submit" variant="primary">Create Draft PO</Button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
@@ -113,7 +310,7 @@ const Purchase = () => {
           <h2 className="text-3xl font-bold text-luxury-brown">Purchase Orders</h2>
           <p className="text-warm-taupe text-sm font-medium">Manage vendor purchases and stock replenishment.</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="font-semibold">
+        <Button onClick={() => setView('form')} className="font-semibold">
           <Plus className="w-5 h-5" /> New Purchase Order
         </Button>
       </div>
@@ -132,12 +329,18 @@ const Purchase = () => {
 
       <div className="grid grid-cols-1 gap-4">
         {filteredOrders.map((o) => (
-          <Card key={o.id} className="hover:shadow-md transition-all border-l-4 border-l-luxury-brown">
+          <Card key={o.id} className={`hover:shadow-md transition-all border-l-4 ${
+              o.status === 'FULLY_RECEIVED' ? 'border-l-emerald-500' :
+              o.status === 'CANCELLED' ? 'border-l-red-500' :
+              o.status === 'CONFIRMED' ? 'border-l-indigo-500' :
+              'border-l-luxury-brown'
+          }`}>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className={`p-4 rounded-2xl ${
-                  o.status === 'RECEIVED' ? 'bg-emerald-50 text-emerald-600' : 
+                  o.status === 'FULLY_RECEIVED' ? 'bg-emerald-50 text-emerald-600' : 
                   o.status === 'PARTIALLY_RECEIVED' ? 'bg-amber-50 text-amber-600' : 
+                  o.status === 'CANCELLED' ? 'bg-red-50 text-red-600' :
                   'bg-indigo-50 text-indigo-600'
                 }`}>
                   <Truck className="w-6 h-6" />
@@ -146,31 +349,57 @@ const Purchase = () => {
                   <div className="flex items-center gap-3">
                     <h3 className="font-bold text-luxury-brown text-lg">{o.vendorName}</h3>
                     <Badge variant={
-                      o.status === 'RECEIVED' ? 'success' : 
+                      o.status === 'FULLY_RECEIVED' ? 'success' : 
                       o.status === 'PARTIALLY_RECEIVED' ? 'warning' : 
+                      o.status === 'CANCELLED' ? 'danger' :
                       'purple'
                     }>
                       {o.status.replace('_', ' ')}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 text-sm text-warm-taupe font-medium">
+                  <div className="flex flex-wrap items-center gap-4 mt-1.5 text-xs text-warm-taupe font-medium">
                     <span className="font-mono bg-gray-100 px-2 py-0.5 rounded-lg text-[10px] text-gray-600">PUR-{o.id.slice(0,8).toUpperCase()}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {new Date(o.createdAt).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-1"><UserIcon className="w-3.5 h-3.5" /> {o.responsiblePerson?.name || 'Unassigned'}</span>
+                    {o.vendorAddress && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {o.vendorAddress}</span>}
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3">
+              <div className="flex flex-col items-end gap-3">
                 <p className="text-2xl font-bold text-luxury-brown">₹{o.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
-                {o.status !== 'RECEIVED' ? (
-                  <Button variant="primary" onClick={() => openReceiveModal(o)} className="font-bold">
-                    <Download className="w-4 h-4" /> Receive Items
-                  </Button>
-                ) : (
-                   <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1.5">
-                     <CheckCircle className="w-3.5 h-3.5" /> Fully Received
-                   </span>
-                )}
+                <div className="flex gap-2">
+                    {o.status === 'DRAFT' && (
+                        <>
+                            <Button variant="secondary" onClick={() => handleCancel(o.id)} size="sm">
+                                <XCircle className="w-4 h-4 mr-1" /> Cancel
+                            </Button>
+                            <Button variant="primary" onClick={() => handleConfirm(o.id)} size="sm">
+                                <CheckCircle className="w-4 h-4 mr-1" /> Confirm
+                            </Button>
+                        </>
+                    )}
+                    {(o.status === 'CONFIRMED' || o.status === 'PARTIALLY_RECEIVED') && (
+                        <>
+                             <Button variant="secondary" onClick={() => handleCancel(o.id)} size="sm">
+                                <XCircle className="w-4 h-4 mr-1" /> Cancel
+                            </Button>
+                            <Button variant="primary" onClick={() => openReceiveModal(o)} size="sm">
+                                <Download className="w-4 h-4 mr-1" /> Receive Items
+                            </Button>
+                        </>
+                    )}
+                    {o.status === 'FULLY_RECEIVED' && (
+                        <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1.5">
+                            <CheckCircle className="w-3.5 h-3.5" /> Fully Received
+                        </span>
+                    )}
+                     {o.status === 'CANCELLED' && (
+                        <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider bg-red-50 px-3 py-1 rounded-full border border-red-100 flex items-center gap-1.5">
+                            <XCircle className="w-3.5 h-3.5" /> Cancelled
+                        </span>
+                    )}
+                </div>
               </div>
             </div>
             
@@ -202,53 +431,6 @@ const Purchase = () => {
            </div>
         )}
       </div>
-
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="New Purchase Order">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-gray-700 ml-1">Vendor</label>
-            <select 
-              className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
-              value={newOrder.vendorId}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewOrder({...newOrder, vendorId: e.target.value})}
-              required
-            >
-              <option value="">Select a vendor...</option>
-              {vendors.map(v => (
-                <option key={v.id} value={v.id}>{v.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-700 ml-1">Product</label>
-              <select 
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm"
-                value={newOrder.productId}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewOrder({...newOrder, productId: e.target.value})}
-                required
-              >
-                <option value="">Select a product...</option>
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} (₹{p.costPrice})</option>
-                ))}
-              </select>
-            </div>
-            <Input 
-              label="Quantity" 
-              type="number"
-              min="1"
-              value={newOrder.quantity}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrder({...newOrder, quantity: Number(e.target.value)})}
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-6 border-t">
-            <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Cancel</Button>
-            <Button type="submit">Create Order</Button>
-          </div>
-        </form>
-      </Modal>
 
       <Modal isOpen={showReceiveModal} onClose={() => setShowReceiveModal(false)} title="Receive Products">
         <form onSubmit={handleReceiveSubmit} className="space-y-6">
@@ -287,11 +469,5 @@ const Purchase = () => {
     </div>
   );
 };
-
-const CheckCircle = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
 
 export default Purchase;

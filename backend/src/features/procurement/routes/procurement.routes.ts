@@ -5,6 +5,8 @@ import { authenticate } from '../../../core/middlewares/authMiddleware.js';
 export const purchaseRouter = Router();
 purchaseRouter.post('/', authenticate, ProcurementController.createPurchaseOrder);
 purchaseRouter.get('/', ProcurementController.getPurchaseOrders);
+purchaseRouter.post('/:id/confirm', authenticate, ProcurementController.confirmPurchaseOrder);
+purchaseRouter.post('/:id/cancel', authenticate, ProcurementController.cancelPurchaseOrder);
 purchaseRouter.post('/:id/receive', authenticate, ProcurementController.receivePurchaseOrder);
 
 export const vendorRouter = Router();

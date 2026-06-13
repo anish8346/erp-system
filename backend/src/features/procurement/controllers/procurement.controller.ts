@@ -14,6 +14,30 @@ export class ProcurementController {
     }
   }
 
+  static async confirmPurchaseOrder(req: AuthRequest, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const po = await ProcurementService.confirmPurchaseOrder(id, req.user?.id);
+      res.json(po);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to confirm procurement order.';
+      console.error('[ConfirmPO Error]:', error);
+      res.status(500).json({ error: message });
+    }
+  }
+
+  static async cancelPurchaseOrder(req: AuthRequest, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const po = await ProcurementService.cancelPurchaseOrder(id, req.user?.id);
+      res.json(po);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to cancel procurement order.';
+      console.error('[CancelPO Error]:', error);
+      res.status(500).json({ error: message });
+    }
+  }
+
   static async receivePurchaseOrder(req: AuthRequest, res: Response) {
     try {
       const id = req.params.id as string;

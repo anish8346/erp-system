@@ -9,8 +9,10 @@ interface PurchaseOrderLineInput {
 }
 
 interface CreatePurchaseOrderInput {
-  vendorId?: string;
+  vendorId: string;
   vendorName: string;
+  vendorAddress?: string;
+  responsiblePersonId?: string;
   orderLines: PurchaseOrderLineInput[];
 }
 
@@ -21,25 +23,54 @@ interface ReceiveItemInput {
 
 export class ProcurementService {
   static async createPurchaseOrder(data: CreatePurchaseOrderInput, userId?: string) {
-    const { vendorName, orderLines } = data;
-    if (!vendorName || !orderLines?.length) {
+    const { vendorId, orderLines } = data;
+    if (!vendorId || !orderLines?.length) {
       throw new Error('Vendor and products are required for procurement.');
     }
 
     const po = await ProcurementRepository.createPurchaseOrder(data);
 
     if (userId) {
-      await logActivity(userId, 'CREATE', 'PURCHASE_ORDER', po.id, `Created procurement order for vendor ${vendorName}`);
+      await logActivity(userId, 'CREATE', 'PURCHASE_ORDER', po.id, `Created procurement order ${po.id} in DRAFT status`);
     }
 
     return po;
+  }
+
+  static async confirmPurchaseOrder(id: string, userId?: string) {
+    const po = await ProcurementRepository.findPurchaseOrderById(id);
+    if (!po) throw new Error('Purchase Order not found.');
+    if (po.status !== 'DRAFT') throw new Error('Only DRAFT orders can be confirmed.');
+
+    const updatedPo = await ProcurementRepository.updatePurchaseOrder(id, { status: 'CONFIRMED' });
+
+    if (userId) {
+      await logActivity(userId, 'CONFIRM', 'PURCHASE_ORDER', id, `Confirmed procurement order ${id}`);
+    }
+
+    return updatedPo;
+  }
+
+  static async cancelPurchaseOrder(id: string, userId?: string) {
+    const po = await ProcurementRepository.findPurchaseOrderById(id);
+    if (!po) throw new Error('Purchase Order not found.');
+    
+    const updatedPo = await ProcurementRepository.updatePurchaseOrder(id, { status: 'CANCELLED' });
+
+    if (userId) {
+      await logActivity(userId, 'CANCEL', 'PURCHASE_ORDER', id, `Cancelled procurement order ${id}`);
+    }
+
+    return updatedPo;
   }
 
   static async receivePurchaseOrder(id: string, items: ReceiveItemInput[], userId?: string) {
     const po = await ProcurementRepository.findPurchaseOrderById(id);
 
     if (!po) throw new Error('Purchase Order not found.');
-    if (po.status === 'RECEIVED') throw new Error('Order already fully received.');
+    if (po.status === 'FULLY_RECEIVED') throw new Error('Order already fully received.');
+    if (po.status === 'CANCELLED') throw new Error('Cannot receive a cancelled order.');
+    if (po.status === 'DRAFT') throw new Error('Order must be confirmed before receiving.');
 
     await prisma.$transaction(async (tx) => {
       let allReceived = true;
@@ -82,12 +113,12 @@ export class ProcurementService {
 
       await tx.purchaseOrder.update({
         where: { id },
-        data: { status: allReceived ? 'RECEIVED' : 'PARTIALLY_RECEIVED' },
+        data: { status: allReceived ? 'FULLY_RECEIVED' : 'PARTIALLY_RECEIVED' },
       });
     });
 
     if (userId) {
-        await logActivity(userId, 'RECEIVE', 'PURCHASE_ORDER', id, `Processed receipt for procurement order from ${po.vendorName}`);
+        await logActivity(userId, 'RECEIVE', 'PURCHASE_ORDER', id, `Processed receipt for procurement order ${id}`);
     }
   }
 

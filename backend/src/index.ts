@@ -8,7 +8,7 @@ import { productRouter } from './features/inventory/routes/inventory.routes.js';
 import { bomRouter, manufacturingRouter } from './features/operations/routes/operations.routes.js';
 import { salesRouter } from './features/sales/routes/sales.routes.js';
 import { purchaseRouter, vendorRouter } from './features/procurement/routes/procurement.routes.js';
-import { configRouter, requestRouter } from './features/admin/routes/admin.routes.js';
+import { configRouter, requestRouter, userRouter } from './features/admin/routes/admin.routes.js';
 import { financeRouter } from './features/analytics/routes/analytics.routes.js';
 
 dotenv.config();
@@ -33,6 +33,7 @@ app.use('/api/purchase', purchaseRouter);
 app.use('/api/manufacturing', manufacturingRouter);
 app.use('/api/config', configRouter);
 app.use('/api/requests', requestRouter);
+app.use('/api/users', userRouter);
 app.use('/api/vendors', vendorRouter);
 app.use('/api/finance', financeRouter);
 

@@ -20,6 +20,7 @@ model User {
   AuditLog  AuditLog[]
   SalesOrder SalesOrder[]
   ManufacturingOrder ManufacturingOrder[] @relation("UserToMO")
+  PurchaseOrder PurchaseOrder[] @relation("ResponsiblePerson")
 }
 
 model Vendor {
@@ -83,15 +84,18 @@ model SalesOrderLine {
 }
 
 model PurchaseOrder {
-  id           String              @id @default(uuid())
-  vendorId     String?
-  vendor       Vendor?             @relation(fields: [vendorId], references: [id])
-  vendorName   String              // Fallback/Legacy
-  status       String              // DRAFT, CONFIRMED, PARTIALLY_RECEIVED, RECEIVED
-  totalAmount  Float
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  orderLines   PurchaseOrderLine[]
+  id                  String              @id @default(uuid())
+  vendorId            String?
+  vendor              Vendor?             @relation(fields: [vendorId], references: [id])
+  vendorName          String              // Fallback/Legacy
+  vendorAddress       String?
+  responsiblePersonId String?
+  responsiblePerson   User?               @relation("ResponsiblePerson", fields: [responsiblePersonId], references: [id])
+  status              String              // DRAFT, CONFIRMED, PARTIALLY_RECEIVED, FULLY_RECEIVED, CANCELLED
+  totalAmount         Float
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  orderLines          PurchaseOrderLine[]
 }
 
 model PurchaseOrderLine {

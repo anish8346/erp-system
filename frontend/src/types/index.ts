@@ -59,7 +59,7 @@ export interface SalesOrder {
   salesPerson?: User | null;
 }
 
-export type PurchaseOrderStatus = 'DRAFT' | 'CONFIRMED' | 'PARTIALLY_RECEIVED' | 'RECEIVED';
+export type PurchaseOrderStatus = 'DRAFT' | 'CONFIRMED' | 'PARTIALLY_RECEIVED' | 'FULLY_RECEIVED' | 'CANCELLED';
 
 export interface PurchaseOrderLine {
   id: string;
@@ -75,11 +75,15 @@ export interface PurchaseOrder {
   id: string;
   vendorId?: string | null;
   vendorName: string;
+  vendorAddress?: string | null;
+  responsiblePersonId?: string | null;
   status: PurchaseOrderStatus;
   totalAmount: number;
   createdAt: string;
   updatedAt: string;
   orderLines: PurchaseOrderLine[];
+  vendor?: Vendor | null;
+  responsiblePerson?: User | null;
 }
 
 export interface BoMLine {
