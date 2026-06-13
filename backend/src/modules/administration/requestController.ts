@@ -1,12 +1,9 @@
 import type { Request, Response } from 'express';
-import prisma from '../config/prisma.js';
+import { AdministrationService } from './administration.service.js';
 
 export const submitRequest = async (req: Request, res: Response) => {
   try {
-    const { name, email, company, message } = req.body;
-    const accessRequest = await prisma.accessRequest.create({
-      data: { name, email, company, message }
-    });
+    const accessRequest = await AdministrationService.submitRequest(req.body);
     res.status(201).json({ message: 'Request submitted successfully', id: accessRequest.id });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -15,9 +12,7 @@ export const submitRequest = async (req: Request, res: Response) => {
 
 export const getRequests = async (req: Request, res: Response) => {
   try {
-    const requests = await prisma.accessRequest.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
+    const requests = await AdministrationService.getRequests();
     res.json(requests);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -28,10 +23,7 @@ export const updateRequestStatus = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
     const { status } = req.body;
-    const updated = await prisma.accessRequest.update({
-      where: { id },
-      data: { status }
-    });
+    const updated = await AdministrationService.updateRequestStatus(id, status);
     res.json(updated);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

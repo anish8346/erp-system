@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAuditLogs, createWorkCenter, getWorkCenters, getUsers } from '../controllers/configController.js';
+import { getAuditLogs, createWorkCenter, getWorkCenters, getUsers } from './configController.js';
 
 const router = Router();
 

@@ -1,7 +1,6 @@
-
 import { Router } from 'express';
-import { getFinancialSummary } from '../controllers/financeController.js';
-import { authenticate } from '../middlewares/authMiddleware.js';
+import { getFinancialSummary } from './financeController.js';
+import { authenticate } from '../../core/middlewares/authMiddleware.js';
 
 const router = Router();
 
