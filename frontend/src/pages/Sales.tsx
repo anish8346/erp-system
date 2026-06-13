@@ -430,8 +430,8 @@ const Sales = () => {
                 onChange={(e) => setNewOrder({...newOrder, salesPersonId: e.target.value})}
               >
                 <option value="">Select Sales Person...</option>
-                {users.filter(u => ['SALES', 'ADMIN', 'OWNER'].includes(u.role)).map(u => (
-                  <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
+                {users.filter(u => u.role === 'SALES').map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
             </div>
