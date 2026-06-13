@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../services/api';
 import { UserPlus, UserCircle2, Mail, Search, Clock, Shield } from 'lucide-react';
 import { Button, Card, Input, Modal, Badge } from '../components/UI';
-import { User, UserRole } from '../types';
+import type { User, UserRole } from '../types';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,8 +21,8 @@ const Users = () => {
     try {
       const res = await api.get('/config/users');
       setUsers(res.data);
-    } catch (err) {
-      console.error("Failed to fetch users");
+    } catch (err: unknown) {
+      console.error("Failed to fetch users", err);
     }
   };
 
@@ -88,7 +89,7 @@ const Users = () => {
                       {user.role}
                     </Badge>
                     <div className="flex items-center gap-1 text-[10px] text-warm-taupe/60 font-bold uppercase tracking-tight">
-                      <Clock className="w-3 h-3" /> {(user as any).createdAt && new Date((user as any).createdAt).toLocaleDateString()}
+                      <Clock className="w-3 h-3" /> {(user as { createdAt?: string }).createdAt && new Date((user as { createdAt?: string }).createdAt!).toLocaleDateString()}
                     </div>
                   </div>
                 </div>

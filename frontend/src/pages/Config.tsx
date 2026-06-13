@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Settings, Plus, LayoutGrid, Globe, CreditCard, Layers } from 'lucide-react';
 import { Button, Card, Input, Badge } from '../components/UI';
-import { WorkCenter } from '../types';
+import type { WorkCenter } from '../types';
 
 const Config = () => {
   const [workCenters, setWorkCenters] = useState<WorkCenter[]>([]);

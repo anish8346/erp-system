@@ -1,6 +1,6 @@
 import { salesRepository } from '../repositories/sales.repository.js';
 import { logActivity } from '../../../core/utils/logger.js';
-import { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem } from '../../../core/types/index.js';
+import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem } from '../../../core/types/index.js';
 
 export const createSalesOrder = async (data: CreateSalesOrderData, userId?: string) => {
   const { customerName, orderLines } = data;

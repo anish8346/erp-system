@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, User, Phone, Mail, MapPin } from 'lucide-react';
 import { Button, Card, Input, Modal } from '../components/UI';
-import { Vendor } from '../types';
+import type { Vendor } from '../types';
 
 const Vendors = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);

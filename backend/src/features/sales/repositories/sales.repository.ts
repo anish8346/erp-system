@@ -1,5 +1,5 @@
 import prisma from '../../../core/database/prisma.js';
-import { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem, SalesOrderStatus, CreateMOData, CreatePOData, SalesOrder, SalesOrderLine } from '../../../core/types/index.js';
+import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem, SalesOrderStatus, CreateMOData, CreatePOData, SalesOrder, SalesOrderLine } from '../../../core/types/index.js';
 
 export class SalesRepository {
   async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number }) {

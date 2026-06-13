@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { History, ArrowUpRight, ArrowDownRight, Search, Filter } from 'lucide-react';
 import { Card, Badge, Button } from '../components/UI';
+import type { StockLedger as StockLedgerType } from '../types';
 
 const StockLedger = () => {
-  const [ledger, setLedger] = useState<any[]>([]);
+  const [ledger, setLedger] = useState<StockLedgerType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchLedger = async () => {
@@ -22,7 +23,7 @@ const StockLedger = () => {
   }, []);
 
   const filteredLedger = ledger.filter(entry => 
-    entry.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (entry.product?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.referenceId.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -75,8 +76,8 @@ const StockLedger = () => {
                     <p className="text-[10px] font-bold text-warm-taupe/60">{new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="font-bold text-luxury-brown">{entry.product.name}</p>
-                    <p className="text-[10px] text-warm-taupe/60 font-mono">{entry.product.id.slice(0,8)}</p>
+                    <p className="font-bold text-luxury-brown">{entry.product?.name || 'Unknown Product'}</p>
+                    <p className="text-[10px] text-warm-taupe/60 font-mono">{entry.product?.id.slice(0,8)}</p>
                   </td>
                   <td className="px-6 py-4">
                     <Badge variant={

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { ShoppingCart, Truck, Factory, AlertTriangle, TrendingUp, Package, History, IndianRupee, TrendingDown, Wallet } from 'lucide-react';
 import { Card, Badge, Button } from '../components/UI';
-import { SalesOrder, Product, ManufacturingOrder, StockLedger } from '../types';
+import type { SalesOrder, Product, ManufacturingOrder, StockLedger } from '../types';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({

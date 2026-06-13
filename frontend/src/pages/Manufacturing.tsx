@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../services/api';
 import { Factory, CheckCircle2, Activity, Clock, Box, Plus, Search } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-import { ManufacturingOrder, Product, BoM, WorkOrder } from '../types';
+import type { ManufacturingOrder, Product, BoM, WorkOrder } from '../types';
 
 const Manufacturing = () => {
   const [mos, setMos] = useState<ManufacturingOrder[]>([]);
@@ -44,7 +45,10 @@ const Manufacturing = () => {
       setNewMO({ productId: '', quantity: 1, bomId: '' });
       fetchData();
     } catch (err: unknown) {
-      const errorMsg = (err as any).response?.data?.error || "Failed to create manufacturing order";
+      let errorMsg = "Failed to create manufacturing order";
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      }
       alert(errorMsg);
     }
   };
@@ -54,7 +58,10 @@ const Manufacturing = () => {
       await api.post(`/manufacturing/${id}/produce`);
       fetchData();
     } catch (err: unknown) {
-      const errorMsg = (err as any).response?.data?.error || "Production failed. Check component stock and work steps.";
+      let errorMsg = "Production failed. Check component stock and work steps.";
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      }
       alert(errorMsg);
     }
   };
@@ -64,7 +71,10 @@ const Manufacturing = () => {
       await api.patch(`/manufacturing/work-order/${woId}/status`, { status });
       fetchData();
     } catch (err: unknown) {
-      const errorMsg = (err as any).response?.data?.error || "Failed to update work order status";
+      let errorMsg = "Failed to update work order status";
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      }
       alert(errorMsg);
     }
   };
@@ -165,7 +175,7 @@ const Manufacturing = () => {
                            {wo.status === 'DONE' ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-gray-300" />}
                         </div>
                         <h4 className="font-bold text-luxury-brown text-sm mb-1">{wo.operation?.name}</h4>
-                        <p className="text-[10px] text-warm-taupe font-bold uppercase mb-4 tracking-tight">{(wo.operation as any)?.workCenter?.name || 'General Assembly'}</p>
+                        <p className="text-[10px] text-warm-taupe font-bold uppercase mb-4 tracking-tight">{wo.operation?.workCenter?.name || 'General Assembly'}</p>
                         
                         <div className="flex gap-2">
                           {wo.status === 'PENDING' && !isDone && (

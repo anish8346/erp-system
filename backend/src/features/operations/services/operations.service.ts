@@ -1,7 +1,7 @@
 import prisma from '../../../core/database/prisma.js';
 import { logActivity } from '../../../core/utils/logger.js';
 import { OperationsRepository } from '../repositories/operations.repository.js';
-import { MOStatus, WOStatus } from '../../../core/types/index.js';
+import type { MOStatus, WOStatus } from '../../../core/types/index.js';
 
 interface BoMComponentInput {
   componentId: string;

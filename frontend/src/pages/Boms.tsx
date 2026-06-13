@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, Trash2, ListTree, Timer, Package, ChevronRight } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-import { BoM, Product, WorkCenter, BoMLine, Operation } from '../types';
+import type { BoM, Product, WorkCenter, BoMLine, Operation } from '../types';
 import axios from 'axios';
 
 const Boms = () => {

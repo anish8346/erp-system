@@ -1,5 +1,5 @@
 import prisma from '../../../core/database/prisma.js';
-import { CreateProductData, UpdateProductData, StockLedgerType } from '../../../core/types/index.js';
+import type { CreateProductData, UpdateProductData, StockLedgerType } from '../../../core/types/index.js';
 
 export class InventoryRepository {
   async createProduct(data: CreateProductData) {

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, CheckCircle, Clock, ShoppingBag, Truck, AlertTriangle, Package, Search } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-import { SalesOrder, Product, SalesOrderLine } from '../types';
+import type { SalesOrder, Product, SalesOrderLine } from '../types';
 import axios from 'axios';
 
 const Sales = () => {

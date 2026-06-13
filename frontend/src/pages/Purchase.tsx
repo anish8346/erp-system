@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '../services/api';
 import { Plus, Download, Truck, ShoppingCart, Package, Search, Clock } from 'lucide-react';
 import { Button, Card, Badge, Modal, Input } from '../components/UI';
-import { PurchaseOrder, Product, Vendor, PurchaseOrderLine } from '../types';
+import type { PurchaseOrder, Product, Vendor, PurchaseOrderLine } from '../types';
 
 const Purchase = () => {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -60,7 +61,10 @@ const Purchase = () => {
       setNewOrder({ vendorId: '', productId: '', quantity: 1 });
       fetchData();
     } catch (err: unknown) {
-      const errorMsg = (err as any).response?.data?.error || "Failed to create procurement order";
+      let errorMsg = "Failed to create procurement order";
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      }
       alert(errorMsg);
     }
   };
@@ -89,7 +93,10 @@ const Purchase = () => {
       setShowReceiveModal(false);
       fetchData();
     } catch (err: unknown) {
-      const errorMsg = (err as any).response?.data?.error || "Receipt failed";
+      let errorMsg = "Receipt failed";
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      }
       alert(errorMsg);
     }
   };

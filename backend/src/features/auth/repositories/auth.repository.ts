@@ -1,5 +1,5 @@
 import prisma from '../../../core/database/prisma.js';
-import { RegisterData } from '../../../core/types/index.js';
+import type { RegisterData } from '../../../core/types/index.js';
 
 export class AuthRepository {
   static async findUserByEmail(email: string) {

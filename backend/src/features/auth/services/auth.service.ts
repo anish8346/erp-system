@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AuthRepository } from '../repositories/auth.repository.js';
 import { logActivity } from '../../../core/utils/logger.js';
-import { RegisterData, LoginData } from '../../../core/types/index.js';
+import type { RegisterData, LoginData } from '../../../core/types/index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 

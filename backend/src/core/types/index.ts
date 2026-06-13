@@ -1,3 +1,4 @@
+
 export type UserRole = 'ADMIN' | 'SALES' | 'PURCHASE' | 'MFG' | 'INVENTORY' | 'OWNER';
 
 export interface RegisterData {
