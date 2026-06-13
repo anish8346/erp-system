@@ -173,6 +173,26 @@ export interface AuditLog {
   user?: User;
 }
 
+export interface AuditLogSummary {
+  total: number;
+  create: number;
+  update: number;
+  delete: number;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  totalPages: number;
+  totalItems: number;
+}
+
+export interface AuditLogsResponse {
+  logs: AuditLog[];
+  summary: AuditLogSummary;
+  pagination: PaginationMeta;
+}
+
 export interface AccessRequest {
   id: string;
   name: string;

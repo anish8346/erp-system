@@ -5,8 +5,17 @@ export class AdminController {
   // Config methods
   static async getAuditLogs(req: Request, res: Response) {
     try {
-      const logs = await AdminService.getAuditLogs();
-      res.json(logs);
+      const filters = {
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
+        startDate: req.query.startDate as string,
+        endDate: req.query.endDate as string,
+        userId: req.query.userId as string,
+        module: req.query.module as string,
+        action: req.query.action as string,
+      };
+      const result = await AdminService.getAuditLogs(filters);
+      res.json(result);
     } catch (error: unknown) {
       res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
     }

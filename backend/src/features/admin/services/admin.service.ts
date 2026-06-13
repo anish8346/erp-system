@@ -1,8 +1,16 @@
 import { AdminRepository } from '../repositories/admin.repository.js';
 
 export class AdminService {
-  static async getAuditLogs() {
-    return AdminRepository.getAuditLogs();
+  static async getAuditLogs(filters: {
+    page: number;
+    limit: number;
+    startDate?: string;
+    endDate?: string;
+    userId?: string;
+    module?: string;
+    action?: string;
+  }) {
+    return AdminRepository.getAuditLogs(filters);
   }
 
   static async createWorkCenter(name: string) {
