@@ -111,26 +111,26 @@ const Products = () => {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Inventory</h2>
-          <p className="text-gray-500">Manage products, stock levels, and procurement strategies.</p>
+          <h2 className="text-3xl font-bold text-luxury-brown">Inventory</h2>
+          <p className="text-warm-taupe text-sm font-medium">Manage products, stock levels, and procurement strategies.</p>
         </div>
-        <Button onClick={() => setShowModal(true)}>
+        <Button onClick={() => setShowModal(true)} className="font-semibold">
           <Plus className="w-5 h-5" /> Add New Product
         </Button>
       </div>
 
-      <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-md">
-        <div className="p-4 border-b border-gray-100 bg-white flex items-center gap-4">
+      <Card className="overflow-hidden border-none shadow-lg bg-white/50 backdrop-blur-md">
+        <div className="p-4 border-b border-soft-cream bg-white flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-taupe/60" />
             <input 
               placeholder="Search inventory..." 
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-faded-white border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" className="font-semibold">
             <Filter className="w-4 h-4" /> Filter
           </Button>
         </div>
@@ -138,21 +138,21 @@ const Products = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-50/50">
-                <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400">Product Info</th>
-                <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400">Procurement</th>
-                <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400 text-right">Pricing</th>
-                <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400 text-center">Stock Details</th>
-                <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400 text-right">Action</th>
+              <tr className="bg-faded-white/50">
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60">Product Info</th>
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60">Procurement</th>
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60 text-right">Pricing</th>
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60 text-center">Stock Details</th>
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filteredProducts.map((p) => (
                 <tr key={p.id} className="group hover:bg-blue-50/30 transition-colors">
                   <td className="px-4 py-5">
-                    <p className="font-bold text-gray-900">{p.name}</p>
+                    <p className="font-bold text-luxury-brown">{p.name}</p>
                     <div className="flex items-center gap-2">
-                       <span className="text-xs text-gray-400 font-mono mt-0.5">{p.id.slice(0,8)}</span>
+                       <span className="text-xs text-warm-taupe/60 font-mono mt-0.5">{p.id.slice(0,8)}</span>
                        {p.vendor && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">V: {p.vendor.name}</span>}
                     </div>
                   </td>
@@ -161,16 +161,16 @@ const Products = () => {
                       <Badge variant={p.procurementType === 'MTO' ? 'warning' : 'success'}>
                         {p.procurementType}
                       </Badge>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">via {p.supplyMethod}</span>
+                      <span className="text-[10px] font-semibold text-warm-taupe/60 uppercase tracking-wider">via {p.supplyMethod}</span>
                     </div>
                   </td>
                   <td className="px-4 py-5 text-right">
-                    <p className="font-bold text-gray-900">₹{p.salesPrice.toFixed(2)}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase">Cost: ₹{p.costPrice.toFixed(2)}</p>
+                    <p className="font-bold text-luxury-brown">₹{p.salesPrice.toFixed(2)}</p>
+                    <p className="text-[10px] text-warm-taupe/60 font-bold uppercase">Cost: ₹{p.costPrice.toFixed(2)}</p>
                   </td>
                   <td className="px-4 py-5">
                     <div className="flex items-center justify-center gap-4">
-                       <StockStat label="On Hand" value={p.qtyOnHand} color="text-gray-900" />
+                       <StockStat label="On Hand" value={p.qtyOnHand} color="text-luxury-brown" />
                        <StockStat label="Reserved" value={p.qtyReserved} color="text-blue-600" />
                        <StockStat label="Free" value={p.qtyOnHand - p.qtyReserved} color="text-green-600" bold />
                     </div>
@@ -207,7 +207,7 @@ const Products = () => {
               ))}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center text-gray-400 italic">No products found.</td>
+                  <td colSpan={5} className="py-20 text-center text-warm-taupe/60 font-medium">No products found.</td>
                 </tr>
               )}
             </tbody>
@@ -254,7 +254,7 @@ const Products = () => {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-gray-700">Procurement Strategy</label>
               <select 
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                 value={newProduct.procurementType}
                 onChange={(e) => setNewProduct({...newProduct, procurementType: e.target.value})}
               >
@@ -265,7 +265,7 @@ const Products = () => {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-gray-700">Supply Method</label>
               <select 
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                 value={newProduct.supplyMethod}
                 onChange={(e) => setNewProduct({...newProduct, supplyMethod: e.target.value})}
               >
@@ -278,7 +278,7 @@ const Products = () => {
             <div className="flex flex-col gap-1">
               <label className="text-sm font-semibold text-gray-700">Preferred Vendor</label>
               <select 
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                 value={newProduct.vendorId}
                 onChange={(e) => setNewProduct({...newProduct, vendorId: e.target.value})}
               >
@@ -328,7 +328,7 @@ const Products = () => {
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-gray-700">Procurement Strategy</label>
                 <select 
-                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                   value={editingProduct.procurementType}
                   onChange={(e) => setEditingProduct({...editingProduct, procurementType: e.target.value})}
                 >
@@ -339,7 +339,7 @@ const Products = () => {
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-gray-700">Supply Method</label>
                 <select 
-                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                   value={editingProduct.supplyMethod}
                   onChange={(e) => setEditingProduct({...editingProduct, supplyMethod: e.target.value})}
                 >
@@ -352,7 +352,7 @@ const Products = () => {
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-gray-700">Preferred Vendor</label>
                 <select 
-                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="px-3 py-2 border border-soft-cream rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                   value={editingProduct.vendorId || ''}
                   onChange={(e) => setEditingProduct({...editingProduct, vendorId: e.target.value})}
                 >
@@ -411,8 +411,8 @@ const Products = () => {
 
 const StockStat = ({ label, value, color, bold }: any) => (
   <div className="flex flex-col items-center">
-    <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider mb-0.5">{label}</span>
-    <span className={`text-sm ${bold ? 'font-black' : 'font-bold'} ${color}`}>{value}</span>
+    <span className="text-[9px] font-semibold uppercase text-warm-taupe/60 tracking-wider mb-0.5">{label}</span>
+    <span className={`text-sm ${bold ? 'font-bold' : 'font-medium'} ${color}`}>{value}</span>
   </div>
 );
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { createMO, produceMO, getMOs, updateWorkOrderStatus } from '../controllers/manufacturingController';
-import { authenticate } from '../middlewares/authMiddleware';
+import { createMO, produceMO, getMOs, updateWorkOrderStatus } from '../controllers/manufacturingController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

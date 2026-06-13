@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createBoM, getBoMs } from '../controllers/bomController';
+import { createBoM, getBoMs } from '../controllers/bomController.js';
 
 const router = Router();
 

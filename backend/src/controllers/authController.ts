@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import prisma from '../config/prisma';
-import { logActivity } from '../utils/logger';
+import prisma from '../config/prisma.js';
+import { logActivity } from '../utils/logger.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 

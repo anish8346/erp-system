@@ -43,8 +43,8 @@ const Vendors = () => {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Vendor Management</h2>
-          <p className="text-gray-500">Manage your suppliers and contact information.</p>
+          <h2 className="text-3xl font-bold text-luxury-brown tracking-tight">Vendors</h2>
+          <p className="text-warm-taupe mt-1">Manage your suppliers and contact information.</p>
         </div>
         <Button onClick={() => setShowModal(true)}>
           <Plus className="w-5 h-5" /> Add New Vendor
@@ -53,37 +53,39 @@ const Vendors = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {vendors.map((v) => (
-          <Card key={v.id} className="p-6 hover:border-blue-200 transition-all">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl text-xl font-bold">
-                {v.name.charAt(0).toUpperCase()}
+          <Card key={v.id} className="p-0 hover:shadow-md transition-all">
+            <div className="p-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 bg-faded-white text-luxury-brown rounded-lg text-lg font-bold border border-soft-cream">
+                  {v.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-bold text-luxury-brown text-lg leading-tight">{v.name}</h3>
+                  <p className="text-xs text-warm-taupe mt-1 font-semibold tracking-wider uppercase opacity-60">VEN-{v.id.slice(0,8).toUpperCase()}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-gray-900 text-lg leading-tight">{v.name}</h3>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">VEN-{v.id.slice(0,8).toUpperCase()}</p>
-              </div>
-            </div>
-            
-            <div className="space-y-3 pt-4 border-t border-gray-50">
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <span>{v.email || 'No email provided'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <span>{v.phone || 'No phone provided'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="truncate">{v.address || 'No address provided'}</span>
+              
+              <div className="space-y-3 pt-4 border-t border-soft-cream">
+                <div className="flex items-center gap-3 text-sm text-warm-taupe">
+                  <Mail className="w-4 h-4 opacity-70" />
+                  <span className="truncate">{v.email || 'No email provided'}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-warm-taupe">
+                  <Phone className="w-4 h-4 opacity-70" />
+                  <span>{v.phone || 'No phone provided'}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-warm-taupe">
+                  <MapPin className="w-4 h-4 opacity-70" />
+                  <span className="truncate">{v.address || 'No address provided'}</span>
+                </div>
               </div>
             </div>
           </Card>
         ))}
         {vendors.length === 0 && (
-          <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-             <User className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-             <p className="text-gray-400 font-medium">No vendors found. Add your first supplier!</p>
+          <div className="col-span-full text-center py-20 bg-white rounded-xl border border-dashed border-soft-cream">
+             <User className="w-12 h-12 text-warm-taupe/20 mx-auto mb-4" />
+             <p className="text-warm-taupe font-medium">No vendors found. Add your first supplier!</p>
           </div>
         )}
       </div>

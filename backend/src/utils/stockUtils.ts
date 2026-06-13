@@ -1,5 +1,5 @@
 
-import prisma from '../config/prisma';
+import prisma from '../config/prisma.js';
 
 /**
  * Validates if enough physical stock exists for a list of items.

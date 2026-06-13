@@ -1,8 +1,8 @@
 
-import { Response } from 'express';
-import prisma from '../config/prisma';
-import { AuthRequest } from '../middlewares/authMiddleware';
-import { logActivity } from '../utils/logger';
+import type { Response } from 'express';
+import prisma from '../config/prisma.js';
+import type { AuthRequest } from '../middlewares/authMiddleware.js';
+import { logActivity } from '../utils/logger.js';
 
 export const createVendor = async (req: AuthRequest, res: Response) => {
   try {

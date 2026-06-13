@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import prisma from '../config/prisma';
+import type { Request, Response } from 'express';
+import prisma from '../config/prisma.js';
 
 export const getAuditLogs = async (req: Request, res: Response) => {
   try {
