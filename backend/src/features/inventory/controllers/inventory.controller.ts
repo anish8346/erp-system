@@ -15,8 +15,13 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const products = await inventoryService.getAllProducts();
-    res.json(products);
+    const filters = {
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20,
+      searchTerm: req.query.searchTerm as string,
+    };
+    const result = await inventoryService.getAllProducts(filters);
+    res.json(result);
   } catch (error: unknown) {
     console.error('[GetProducts Error]:', error);
     res.status(500).json({ error: 'Failed to fetch inventory list.' });

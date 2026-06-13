@@ -30,10 +30,39 @@ export class InventoryRepository {
     });
   }
 
-  async findAllProducts() {
-    return await prisma.product.findMany({
-      include: { vendor: true }
-    });
+  async findAllProducts(filters: { page: number; limit: number; searchTerm?: string }) {
+    const { page, limit, searchTerm } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { id: { contains: searchTerm, mode: 'insensitive' } },
+        { vendor: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [products, totalItems] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: { vendor: true },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return {
+      products,
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+      },
+    };
   }
 
   async findProductById(id: string) {

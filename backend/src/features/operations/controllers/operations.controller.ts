@@ -41,8 +41,13 @@ export class OperationsController {
 
   static async getMOs(req: AuthRequest, res: Response) {
     try {
-      const mos = await OperationsService.getMOs();
-      res.json(mos);
+      const filters = {
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
+        searchTerm: req.query.searchTerm as string,
+      };
+      const result = await OperationsService.getMOs(filters);
+      res.json(result);
     } catch (error: unknown) {
       console.error('[GetMOs Error]:', error);
       res.status(500).json({ error: 'Failed to fetch manufacturing orders.' });

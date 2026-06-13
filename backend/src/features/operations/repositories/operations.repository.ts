@@ -103,16 +103,43 @@ export class OperationsRepository {
     });
   }
 
-  static async getMOs() {
-    return await prisma.manufacturingOrder.findMany({
-      include: { 
-        product: true, 
-        bom: true, 
-        assignee: true,
-        components: { include: { product: true } },
-        WorkOrders: { include: { operation: true, workCenter: true } }
+  static async getMOs(filters: { page: number; limit: number; searchTerm?: string }) {
+    const { page, limit, searchTerm } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (searchTerm) {
+      where.OR = [
+        { id: { contains: searchTerm, mode: 'insensitive' } },
+        { product: { name: { contains: searchTerm, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [mos, totalItems] = await Promise.all([
+      prisma.manufacturingOrder.findMany({
+        where,
+        include: { 
+          product: true, 
+          bom: true, 
+          assignee: true,
+          components: { include: { product: true } },
+          WorkOrders: { include: { operation: true, workCenter: true } }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.manufacturingOrder.count({ where }),
+    ]);
+
+    return {
+      mos,
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
       },
-      orderBy: { createdAt: 'desc' }
-    });
+    };
   }
 }

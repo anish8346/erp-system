@@ -164,7 +164,7 @@ export class OperationsService {
     return comp;
   }
 
-  static async getMOs() {
-    return await OperationsRepository.getMOs();
+  static async getMOs(filters: { page: number; limit: number; searchTerm?: string }) {
+    return await OperationsRepository.getMOs(filters);
   }
 }

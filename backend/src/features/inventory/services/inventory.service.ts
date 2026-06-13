@@ -18,8 +18,8 @@ export const createProduct = async (data: CreateProductData, userId?: string) =>
   return product;
 };
 
-export const getAllProducts = async () => {
-  return await inventoryRepository.findAllProducts();
+export const getAllProducts = async (filters: { page: number; limit: number; searchTerm?: string }) => {
+  return await inventoryRepository.findAllProducts(filters);
 };
 
 export const getProductById = async (id: string) => {
