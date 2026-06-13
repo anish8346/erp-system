@@ -1,14 +1,11 @@
+import prisma from '../../core/config/prisma.js';
+import { logActivity } from '../../core/utils/logger.js';
 
-import type { Response, Request } from 'express';
-import prisma from '../config/prisma.js';
-import type { AuthRequest } from '../middlewares/authMiddleware.js';
-import { logActivity } from '../utils/logger.js';
-
-export const createPurchaseOrder = async (req: AuthRequest, res: Response) => {
-  try {
-    const { vendorId, vendorName, orderLines } = req.body;
+export class PurchaseService {
+  static async createPurchaseOrder(data: any, userId?: string) {
+    const { vendorId, vendorName, orderLines } = data;
     if (!vendorName || !orderLines?.length) {
-      return res.status(400).json({ error: 'Vendor and products are required for procurement.' });
+      throw new Error('Vendor and products are required for procurement.');
     }
 
     const totalAmount = orderLines.reduce((acc: number, line: any) => acc + (line.quantity * line.price), 0);
@@ -30,29 +27,21 @@ export const createPurchaseOrder = async (req: AuthRequest, res: Response) => {
       include: { orderLines: true },
     });
 
-    if (req.user) {
-      await logActivity(req.user.id, 'CREATE', 'PURCHASE_ORDER', po.id, `Created procurement order for vendor ${vendorName}`);
+    if (userId) {
+      await logActivity(userId, 'CREATE', 'PURCHASE_ORDER', po.id, `Created procurement order for vendor ${vendorName}`);
     }
 
-    res.status(201).json(po);
-  } catch (error: any) {
-    console.error('[CreatePO Error]:', error);
-    res.status(500).json({ error: 'Failed to create procurement order.' });
+    return po;
   }
-};
 
-export const receivePurchaseOrder = async (req: AuthRequest, res: Response) => {
-  try {
-    const id = req.params.id as string;
-    const { items } = req.body;
-
+  static async receivePurchaseOrder(id: string, items: any[], userId?: string) {
     const po = await prisma.purchaseOrder.findUnique({
       where: { id },
       include: { orderLines: true },
     });
 
-    if (!po) return res.status(404).json({ error: 'Purchase Order not found.' });
-    if (po.status === 'RECEIVED') return res.status(400).json({ error: 'Order already fully received.' });
+    if (!po) throw new Error('Purchase Order not found.');
+    if (po.status === 'RECEIVED') throw new Error('Order already fully received.');
 
     await prisma.$transaction(async (tx) => {
       let allReceived = true;
@@ -99,26 +88,47 @@ export const receivePurchaseOrder = async (req: AuthRequest, res: Response) => {
       });
     });
 
-    if (req.user) {
-        await logActivity(req.user.id, 'RECEIVE', 'PURCHASE_ORDER', id, `Processed receipt for procurement order from ${po.vendorName}`);
+    if (userId) {
+        await logActivity(userId, 'RECEIVE', 'PURCHASE_ORDER', id, `Processed receipt for procurement order from ${po.vendorName}`);
     }
-
-    res.json({ message: 'Receipt processed successfully.' });
-  } catch (error: any) {
-    console.error('[ReceivePO Error]:', error);
-    res.status(500).json({ error: error.message || 'Failed to process goods receipt.' });
   }
-};
 
-export const getPurchaseOrders = async (req: Request, res: Response) => {
-    try {
-      const orders = await prisma.purchaseOrder.findMany({
-        include: { orderLines: { include: { product: true } } },
-        orderBy: { createdAt: 'desc' }
-      });
-      res.json(orders);
-    } catch (error: any) {
-      console.error('[GetPOs Error]:', error);
-      res.status(500).json({ error: 'Failed to retrieve procurement orders.' });
+  static async getPurchaseOrders() {
+    return await prisma.purchaseOrder.findMany({
+      include: { orderLines: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  static async createVendor(data: { name: string, email?: string, phone?: string, address?: string }, userId?: string) {
+    const { name, email, phone, address } = data;
+    const vendor = await prisma.vendor.create({
+      data: { name, email, phone, address }
+    });
+
+    if (userId) {
+      await logActivity(userId, 'CREATE', 'VENDOR', vendor.id, `Created vendor: ${name}`);
     }
-};
+
+    return vendor;
+  }
+
+  static async getVendors() {
+    return await prisma.vendor.findMany({
+      orderBy: { name: 'asc' }
+    });
+  }
+
+  static async updateVendor(id: string, data: { name?: string, email?: string, phone?: string, address?: string }, userId?: string) {
+    const vendor = await prisma.vendor.update({
+      where: { id },
+      data
+    });
+
+    if (userId) {
+      await logActivity(userId, 'UPDATE', 'VENDOR', id, `Updated vendor: ${vendor.name}`);
+    }
+
+    return vendor;
+  }
+}

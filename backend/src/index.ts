@@ -1,16 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import productRoutes from './routes/productRoutes.js';
-import bomRoutes from './routes/bomRoutes.js';
-import salesRoutes from './routes/salesRoutes.js';
-import purchaseRoutes from './routes/purchaseRoutes.js';
-import manufacturingRoutes from './routes/manufacturingRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import configRoutes from './routes/configRoutes.js';
-import requestRoutes from './routes/requestRoutes.js';
-import vendorRoutes from './routes/vendorRoutes.js';
-import financeRoutes from './routes/financeRoutes.js';
+
+// Module Routes
+import productRoutes from './modules/products/productRoutes.js';
+import bomRoutes from './modules/manufacturing/bomRoutes.js';
+import salesRoutes from './modules/sales/salesRoutes.js';
+import purchaseRoutes from './modules/purchase/purchaseRoutes.js';
+import manufacturingRoutes from './modules/manufacturing/manufacturingRoutes.js';
+import authRoutes from './modules/auth/authRoutes.js';
+import configRoutes from './modules/administration/configRoutes.js';
+import requestRoutes from './modules/administration/requestRoutes.js';
+import vendorRoutes from './modules/purchase/vendorRoutes.js';
+import financeRoutes from './modules/finance/financeRoutes.js';
 
 dotenv.config();
 
