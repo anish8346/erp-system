@@ -13,6 +13,7 @@ import AuditLogs from './pages/AuditLogs';
 import Config from './pages/Config';
 import Users from './pages/Users';
 import Requests from './pages/Requests';
+import Vendors from './pages/Vendors';
 import LandingPage from './pages/LandingPage';
 
 function App() {
@@ -82,7 +83,10 @@ function App() {
                     )}
 
                     {canAccess(['PURCHASE', 'OWNER']) && (
-                      <NavItem to="/dashboard/purchase" icon={<Truck />} label="Procurement" color="text-amber-400" />
+                      <>
+                        <NavItem to="/dashboard/purchase" icon={<Truck />} label="Procurement" color="text-amber-400" />
+                        <NavItem to="/dashboard/vendors" icon={<UserPlus />} label="Vendor Registry" color="text-amber-400" />
+                      </>
                     )}
 
                     <NavItem to="/dashboard/ledger" icon={<History />} label="Stock Ledger" />
@@ -117,6 +121,7 @@ function App() {
                         <Route path="boms" element={<Boms />} />
                         <Route path="sales" element={<Sales />} />
                         <Route path="purchase" element={<Purchase />} />
+                        <Route path="vendors" element={<Vendors />} />
                         <Route path="manufacturing" element={<Manufacturing />} />
                         <Route path="ledger" element={<StockLedger />} />
                         <Route path="requests" element={<Requests />} />

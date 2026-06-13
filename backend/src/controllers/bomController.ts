@@ -3,18 +3,19 @@ import prisma from '../config/prisma';
 
 export const createBoM = async (req: Request, res: Response) => {
   try {
-    const { productId, name, components } = req.body;
+    const { productId, name, components, operations } = req.body;
     
     // Use transaction to ensure consistency
     const bom = await prisma.$transaction(async (tx) => {
-      // Check if BoM already exists - Casing must match prisma client (usually boM)
+      // Check if BoM already exists
       const existingBom = await tx.boM.findUnique({ where: { productId } });
       
       if (existingBom) {
-        // Delete old lines
+        // Delete old lines and operations
         await tx.boMLine.deleteMany({ where: { bomId: existingBom.id } });
+        await tx.operation.deleteMany({ where: { bomId: existingBom.id } });
         
-        // Update BoM name and recreate lines
+        // Update BoM name and recreate everything
         return await tx.boM.update({
           where: { id: existingBom.id },
           data: {
@@ -25,8 +26,15 @@ export const createBoM = async (req: Request, res: Response) => {
                 quantity: Number(c.quantity),
               })),
             },
+            operations: {
+              create: (operations || []).map((o: any) => ({
+                name: o.name,
+                duration: Number(o.duration),
+                workCenterId: o.workCenterId,
+              })),
+            },
           },
-          include: { bomLines: true },
+          include: { bomLines: true, operations: true },
         });
       } else {
         // Create new BoM
@@ -40,8 +48,15 @@ export const createBoM = async (req: Request, res: Response) => {
                 quantity: Number(c.quantity),
               })),
             },
+            operations: {
+              create: (operations || []).map((o: any) => ({
+                name: o.name,
+                duration: Number(o.duration),
+                workCenterId: o.workCenterId,
+              })),
+            },
           },
-          include: { bomLines: true },
+          include: { bomLines: true, operations: true },
         });
       }
     });

@@ -9,6 +9,7 @@ import manufacturingRoutes from './routes/manufacturingRoutes';
 import authRoutes from './routes/authRoutes';
 import configRoutes from './routes/configRoutes';
 import requestRoutes from './routes/requestRoutes';
+import vendorRoutes from './routes/vendorRoutes';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use('/api/purchase', purchaseRoutes);
 app.use('/api/manufacturing', manufacturingRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/vendors', vendorRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });

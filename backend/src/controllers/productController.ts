@@ -15,7 +15,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         costPrice,
         procurementType,
         supplyMethod,
-        vendorId,
+        vendorId: vendorId || null,
         bomId,
         qtyOnHand: initialQty,
         qtyReserved: 0,
@@ -70,6 +70,88 @@ export const getProductById = async (req: Request, res: Response) => {
       }
     });
     if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, salesPrice, costPrice, procurementType, supplyMethod, vendorId } = req.body;
+    
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        salesPrice,
+        costPrice,
+        procurementType,
+        supplyMethod,
+        vendorId: vendorId || null,
+      },
+    });
+
+    if (req.user) {
+      await logActivity(req.user.id, 'UPDATE', 'PRODUCT', id, `Updated product details for ${name}`);
+    }
+
+    res.json(product);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteProduct = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if product is in use
+    const linesCount = await prisma.salesOrderLine.count({ where: { productId: id } });
+    if (linesCount > 0) {
+      return res.status(400).json({ error: 'Cannot delete product: It is linked to existing Sales Orders.' });
+    }
+
+    const product = await prisma.product.delete({ where: { id } });
+
+    if (req.user) {
+      await logActivity(req.user.id, 'DELETE', 'PRODUCT', id, `Deleted product: ${product.name}`);
+    }
+
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const adjustStock = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { adjustment, reason } = req.body; 
+    
+    const product = await prisma.$transaction(async (tx) => {
+      const p = await tx.product.update({
+        where: { id },
+        data: { qtyOnHand: { increment: Number(adjustment) } }
+      });
+
+      await tx.stockLedger.create({
+        data: {
+          productId: id,
+          quantityChange: Number(adjustment),
+          type: 'ADJUSTMENT',
+          referenceId: reason || 'MANUAL_ADJUSTMENT',
+        }
+      });
+
+      return p;
+    });
+
+    if (req.user) {
+      await logActivity(req.user.id, 'ADJUST_STOCK', 'PRODUCT', id, `Manually adjusted stock for ${product.name} by ${adjustment}. Reason: ${reason}`);
+    }
+
     res.json(product);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

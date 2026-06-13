@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Plus, Search, Filter, MoreVertical } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Package, X, ArrowUpRight } from 'lucide-react';
 import { Button, Input, Card, Badge, Modal } from '../components/UI';
 
 interface Product {
@@ -12,12 +13,20 @@ interface Product {
   qtyReserved: number;
   procurementType: string;
   supplyMethod: string;
+  vendorId?: string;
+  vendor?: { name: string };
 }
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [adjustData, setAdjustData] = useState({ id: '', name: '', adjustment: 0, reason: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  
   const [newProduct, setNewProduct] = useState({
     name: '',
     salesPrice: 0,
@@ -25,19 +34,24 @@ const Products = () => {
     qtyOnHand: 0,
     procurementType: 'MTS',
     supplyMethod: 'PURCHASE',
+    vendorId: '',
   });
 
-  const fetchProducts = async () => {
+  const fetchData = async () => {
     try {
-      const res = await api.get('/products');
-      setProducts(res.data);
+      const [prodRes, vendRes] = await Promise.all([
+        api.get('/products'),
+        api.get('/vendors'),
+      ]);
+      setProducts(prodRes.data);
+      setVendors(vendRes.data);
     } catch (err) {
-      console.error("Fetch products failed", err);
+      console.error("Fetch data failed", err);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,10 +59,47 @@ const Products = () => {
     try {
       await api.post('/products', newProduct);
       setShowModal(false);
-      setNewProduct({ name: '', salesPrice: 0, costPrice: 0, qtyOnHand: 0, procurementType: 'MTS', supplyMethod: 'PURCHASE' });
-      fetchProducts();
+      setNewProduct({ name: '', salesPrice: 0, costPrice: 0, qtyOnHand: 0, procurementType: 'MTS', supplyMethod: 'PURCHASE', vendorId: '' });
+      fetchData();
     } catch (err) {
       alert("Failed to create product");
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(`/products/${editingProduct.id}`, editingProduct);
+      setShowEditModal(false);
+      fetchData();
+    } catch (err) {
+      alert("Failed to update product");
+    }
+  };
+
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.patch(`/products/${adjustData.id}/adjust-stock`, {
+        adjustment: adjustData.adjustment,
+        reason: adjustData.reason
+      });
+      setShowAdjustModal(false);
+      setAdjustData({ id: '', name: '', adjustment: 0, reason: '' });
+      fetchData();
+    } catch (err) {
+      alert("Failed to adjust stock");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this product? This will only work if the product is not used in any Sales Orders.")) {
+      try {
+        await api.delete(`/products/${id}`);
+        fetchData();
+      } catch (err: any) {
+        alert(err.response?.data?.error || "Failed to delete product");
+      }
     }
   };
 
@@ -57,10 +108,10 @@ const Products = () => {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-black text-gray-900">Inventory</h2>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Inventory</h2>
           <p className="text-gray-500">Manage products, stock levels, and procurement strategies.</p>
         </div>
         <Button onClick={() => setShowModal(true)}>
@@ -68,26 +119,26 @@ const Products = () => {
         </Button>
       </div>
 
-      <Card>
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+      <Card className="overflow-hidden border-none shadow-xl bg-white/50 backdrop-blur-md">
+        <div className="p-4 border-b border-gray-100 bg-white flex items-center gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
-              placeholder="Search products..." 
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              placeholder="Search inventory..." 
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="secondary" className="md:w-auto">
-            <Filter className="w-4 h-4" /> Filters
+          <Button variant="secondary" size="sm">
+            <Filter className="w-4 h-4" /> Filter
           </Button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-left">
             <thead>
-              <tr className="text-left border-b border-gray-100">
+              <tr className="bg-gray-50/50">
                 <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400">Product Info</th>
                 <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400">Procurement</th>
                 <th className="px-4 py-4 text-xs font-black uppercase tracking-widest text-gray-400 text-right">Pricing</th>
@@ -100,7 +151,10 @@ const Products = () => {
                 <tr key={p.id} className="group hover:bg-blue-50/30 transition-colors">
                   <td className="px-4 py-5">
                     <p className="font-bold text-gray-900">{p.name}</p>
-                    <p className="text-xs text-gray-400 font-mono mt-0.5">{p.id.slice(0,8)}</p>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs text-gray-400 font-mono mt-0.5">{p.id.slice(0,8)}</span>
+                       {p.vendor && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">V: {p.vendor.name}</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-5">
                     <div className="flex flex-col gap-1">
@@ -111,8 +165,8 @@ const Products = () => {
                     </div>
                   </td>
                   <td className="px-4 py-5 text-right">
-                    <p className="font-bold text-gray-900">${p.salesPrice.toFixed(2)}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase">Cost: ${p.costPrice.toFixed(2)}</p>
+                    <p className="font-bold text-gray-900">₹{p.salesPrice.toFixed(2)}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase">Cost: ₹{p.costPrice.toFixed(2)}</p>
                   </td>
                   <td className="px-4 py-5">
                     <div className="flex items-center justify-center gap-4">
@@ -122,9 +176,32 @@ const Products = () => {
                     </div>
                   </td>
                   <td className="px-4 py-5 text-right">
-                    <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        title="Adjust Stock"
+                        onClick={() => { setAdjustData({ id: p.id, name: p.name, adjustment: 0, reason: '' }); setShowAdjustModal(true); }}
+                        className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                      </button>
+                      <button 
+                        title="Edit Info"
+                        onClick={() => { setEditingProduct({...p}); setShowEditModal(true); }}
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button 
+                        title="Delete Product"
+                        onClick={() => handleDelete(p.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="group-hover:hidden">
+                       <MoreVertical className="w-5 h-5 text-gray-300 ml-auto" />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -138,6 +215,7 @@ const Products = () => {
         </div>
       </Card>
 
+      {/* CREATE MODAL */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Create New Product">
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input 
@@ -196,11 +274,136 @@ const Products = () => {
               </select>
             </div>
           </div>
+          {newProduct.supplyMethod === 'PURCHASE' && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-semibold text-gray-700">Preferred Vendor</label>
+              <select 
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                value={newProduct.vendorId}
+                onChange={(e) => setNewProduct({...newProduct, vendorId: e.target.value})}
+              >
+                <option value="">Select a vendor...</option>
+                {vendors.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="secondary" type="button" onClick={() => setShowModal(false)}>Cancel</Button>
             <Button type="submit">Create Product</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Product Info">
+        {editingProduct && (
+          <form onSubmit={handleEditSubmit} className="space-y-6">
+            <Input 
+              label="Product Name" 
+              value={editingProduct.name}
+              onChange={(e: any) => setEditingProduct({...editingProduct, name: e.target.value})}
+              required
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Input 
+                label="Sales Price (₹)" 
+                type="number"
+                step="0.01"
+                value={editingProduct.salesPrice}
+                onChange={(e: any) => setEditingProduct({...editingProduct, salesPrice: Number(e.target.value)})}
+                required
+              />
+              <Input 
+                label="Cost Price (₹)" 
+                type="number"
+                step="0.01"
+                value={editingProduct.costPrice}
+                onChange={(e: any) => setEditingProduct({...editingProduct, costPrice: Number(e.target.value)})}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-semibold text-gray-700">Procurement Strategy</label>
+                <select 
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  value={editingProduct.procurementType}
+                  onChange={(e) => setEditingProduct({...editingProduct, procurementType: e.target.value})}
+                >
+                  <option value="MTS">Make To Stock (MTS)</option>
+                  <option value="MTO">Make To Order (MTO)</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-semibold text-gray-700">Supply Method</label>
+                <select 
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  value={editingProduct.supplyMethod}
+                  onChange={(e) => setEditingProduct({...editingProduct, supplyMethod: e.target.value})}
+                >
+                  <option value="PURCHASE">Purchase from Vendor</option>
+                  <option value="MANUFACTURE">Manufacture In-House</option>
+                </select>
+              </div>
+            </div>
+            {editingProduct.supplyMethod === 'PURCHASE' && (
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-semibold text-gray-700">Preferred Vendor</label>
+                <select 
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  value={editingProduct.vendorId || ''}
+                  onChange={(e) => setEditingProduct({...editingProduct, vendorId: e.target.value})}
+                >
+                  <option value="">Select a vendor...</option>
+                  {vendors.map(v => (
+                    <option key={v.id} value={v.id}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button variant="secondary" type="button" onClick={() => setShowEditModal(false)}>Cancel</Button>
+              <Button type="submit">Update Changes</Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* ADJUST STOCK MODAL */}
+      <Modal isOpen={showAdjustModal} onClose={() => setShowAdjustModal(false)} title="Adjust Stock Levels">
+         <form onSubmit={handleAdjustSubmit} className="space-y-6">
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-3">
+               <Package className="w-8 h-8 text-blue-500" />
+               <div>
+                  <p className="font-bold text-blue-900">{adjustData.name}</p>
+                  <p className="text-xs text-blue-600">Enter a positive number to add stock, negative to remove.</p>
+               </div>
+            </div>
+            
+            <Input 
+              label="Adjustment Quantity" 
+              type="number"
+              placeholder="e.g. 10 or -5"
+              value={adjustData.adjustment}
+              onChange={(e: any) => setAdjustData({...adjustData, adjustment: Number(e.target.value)})}
+              required
+            />
+
+            <Input 
+              label="Reason for Adjustment" 
+              placeholder="e.g. Damaged items or Physical count correction"
+              value={adjustData.reason}
+              onChange={(e: any) => setAdjustData({...adjustData, reason: e.target.value})}
+              required
+            />
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button variant="secondary" type="button" onClick={() => setShowAdjustModal(false)}>Cancel</Button>
+              <Button type="submit" variant="primary">Confirm Adjustment</Button>
+            </div>
+         </form>
       </Modal>
     </div>
   );

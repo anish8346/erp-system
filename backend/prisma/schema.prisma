@@ -20,6 +20,18 @@ model User {
   AuditLog  AuditLog[]
 }
 
+model Vendor {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  products  Product[]
+  purchaseOrders PurchaseOrder[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Product {
   id              String   @id @default(uuid())
   name            String
@@ -30,6 +42,7 @@ model Product {
   procurementType String   // MTS, MTO
   supplyMethod    String   // MANUFACTURE, PURCHASE
   vendorId        String?
+  vendor          Vendor?  @relation(fields: [vendorId], references: [id])
   bomId           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -45,7 +58,7 @@ model Product {
 model SalesOrder {
   id           String           @id @default(uuid())
   customerName String
-  status       String           // DRAFT, CONFIRMED, DELIVERED, CANCELLED
+  status       String           // DRAFT, CONFIRMED, PARTIALLY_DELIVERED, DELIVERED, CANCELLED
   totalAmount  Float
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
@@ -57,6 +70,7 @@ model SalesOrderLine {
   salesOrderId String
   productId    String
   quantity     Float
+  deliveredQty Float      @default(0)
   price        Float
   salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
   product      Product    @relation(fields: [productId], references: [id])
@@ -64,8 +78,10 @@ model SalesOrderLine {
 
 model PurchaseOrder {
   id           String              @id @default(uuid())
-  vendorName   String
-  status       String              // DRAFT, CONFIRMED, RECEIVED
+  vendorId     String?
+  vendor       Vendor?             @relation(fields: [vendorId], references: [id])
+  vendorName   String              // Fallback/Legacy
+  status       String              // DRAFT, CONFIRMED, PARTIALLY_RECEIVED, RECEIVED
   totalAmount  Float
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -77,6 +93,7 @@ model PurchaseOrderLine {
   purchaseOrderId String
   productId       String
   quantity        Float
+  receivedQty     Float         @default(0)
   price           Float
   purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
   product         Product       @relation(fields: [productId], references: [id])
@@ -88,6 +105,7 @@ model BoM {
   name       String
   product    Product   @relation("ProductToBoM", fields: [productId], references: [id])
   bomLines   BoMLine[]
+  operations Operation[]
   ManufacturingOrder ManufacturingOrder[]
 }
 
@@ -111,6 +129,8 @@ model Operation {
   name         String
   duration     Int         // in minutes
   workCenterId String
+  bomId        String?
+  bom          BoM?        @relation(fields: [bomId], references: [id])
   workCenter   WorkCenter  @relation(fields: [workCenterId], references: [id])
   WorkOrders   WorkOrder[]
 }

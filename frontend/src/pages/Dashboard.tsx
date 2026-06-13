@@ -9,6 +9,7 @@ const Dashboard = () => {
     pendingDeliveries: 0,
     activeMOs: 0,
     lowStock: 0,
+    delayedOrders: 0,
   });
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,11 +28,16 @@ const Dashboard = () => {
         const lowStockItems = (products.data || []).filter((p: any) => (p.qtyOnHand - p.qtyReserved) <= 0);
         const activeMFG = (mos.data || []).filter((m: any) => m.status !== 'DONE');
 
+        const delayedOrdersCount = confirmedSales.filter((s: any) => {
+          return new Date().getTime() - new Date(s.createdAt).getTime() > 2 * 24 * 60 * 60 * 1000;
+        }).length;
+
         setStats({
           totalSales: (sales.data || []).length,
           pendingDeliveries: confirmedSales.length,
           activeMOs: activeMFG.length,
           lowStock: lowStockItems.length,
+          delayedOrders: delayedOrdersCount,
         });
         setRecentLogs((ledger.data || []).slice(0, 5));
       } catch (err) {
@@ -46,7 +52,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-blue-600"></div>
       </div>
     );
   }
@@ -72,7 +78,7 @@ const Dashboard = () => {
           value={stats.pendingDeliveries} 
           icon={<Truck className="w-6 h-6" />} 
           color="orange" 
-          trend="4 urgent today"
+          trend={`${stats.delayedOrders > 0 ? `${stats.delayedOrders} delayed` : 'On track'}`}
         />
         <KPICard 
           title="Production" 
@@ -118,25 +124,6 @@ const Dashboard = () => {
           <button className="w-full mt-6 text-sm text-blue-600 font-bold hover:underline flex items-center justify-center gap-1">
             <History className="w-4 h-4" /> View Full Ledger
           </button>
-        </Card>
-
-        {/* Quick Links / Status */}
-        <Card title="System Health" subtitle="Real-time connectivity status">
-          <div className="space-y-6">
-            <HealthItem label="Database" status="Connected" />
-            <HealthItem label="API Gateway" status="Operational" />
-            <HealthItem label="Auth Service" status="Operational" />
-            
-            <div className="mt-8 p-4 bg-blue-50 rounded-2xl">
-              <div className="flex items-start gap-3">
-                <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-blue-900">Automation Tip</p>
-                  <p className="text-xs text-blue-700 mt-1">Make To Order (MTO) is active. Shortages will automatically trigger POs or MOs.</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </Card>
       </div>
     </div>

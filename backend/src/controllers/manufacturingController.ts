@@ -6,17 +6,31 @@ import { logActivity } from '../utils/logger';
 export const createMO = async (req: AuthRequest, res: Response) => {
   try {
     const { productId, quantity, bomId } = req.body;
+    
+    // Fetch operations linked to this BoM
+    const bom = await prisma.boM.findUnique({
+      where: { id: bomId },
+      include: { operations: true }
+    });
+
     const mo = await prisma.manufacturingOrder.create({
       data: {
         productId,
         quantity,
         bomId,
         status: 'DRAFT',
+        WorkOrders: {
+          create: (bom?.operations || []).map(op => ({
+            operationId: op.id,
+            status: 'PENDING',
+            duration: op.duration * quantity, // Scaled by quantity
+          }))
+        }
       },
     });
 
     if (req.user) {
-      await logActivity(req.user.id, 'CREATE', 'MO', mo.id, `Planned production for ${quantity} units`);
+      await logActivity(req.user.id, 'CREATE', 'MO', mo.id, `Planned production for ${quantity} units with ${bom?.operations.length || 0} work steps`);
     }
 
     res.status(201).json(mo);
@@ -32,12 +46,19 @@ export const produceMO = async (req: AuthRequest, res: Response) => {
       where: { id },
       include: { 
         bom: { include: { bomLines: true } },
-        product: true
+        product: true,
+        WorkOrders: true
       },
     });
 
     if (!mo) return res.status(404).json({ error: 'MO not found' });
     if (mo.status === 'DONE') return res.status(400).json({ error: 'MO already completed' });
+
+    // Check if all WorkOrders are DONE
+    const allWorkOrdersDone = mo.WorkOrders.every(wo => wo.status === 'DONE');
+    if (mo.WorkOrders.length > 0 && !allWorkOrdersDone) {
+      return res.status(400).json({ error: 'Cannot complete MO: Not all work steps are finished.' });
+    }
 
     // Transaction: Consume components and produce finished good
     await prisma.$transaction(async (tx) => {
@@ -99,6 +120,27 @@ export const produceMO = async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ message: 'Production completed successfully' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateWorkOrderStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const wo = await prisma.workOrder.update({
+      where: { id },
+      data: { status },
+      include: { mo: { include: { product: true } }, operation: true }
+    });
+
+    if (req.user) {
+      await logActivity(req.user.id, 'UPDATE_STATUS', 'WORK_ORDER', id, `Updated ${wo.operation.name} for ${wo.mo.product.name} to ${status}`);
+    }
+
+    res.json(wo);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
