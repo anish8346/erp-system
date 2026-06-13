@@ -7,7 +7,7 @@ import {
   ArrowLeft, CheckCircle, XCircle, User as UserIcon, MapPin, Trash2, 
   MessageSquare, Edit3, Save, TrendingDown, History 
 } from 'lucide-react';
-import { Button, Card, Badge, Modal, Input } from '../components/UI';
+import { Button, Card, Badge, Modal, Input, ConfirmDialog } from '../components/UI';
 import type { PurchaseOrder, Product, Vendor, PurchaseOrderLine, User, PurchaseOrderComment } from '../types';
 
 const Purchase = () => {
@@ -17,6 +17,8 @@ const Purchase = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
   const [receiveQtys, setReceiveQtys] = useState<Record<string, number>>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,10 +145,10 @@ const Purchase = () => {
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+  const handleCancel = async () => {
+    if (!orderToCancel) return;
     try {
-      await api.post(`/purchase/${id}/cancel`);
+      await api.post(`/purchase/${orderToCancel}/cancel`);
       if (view === 'negotiation') {
           setView('list');
           setNegotiationOrder(null);
@@ -405,7 +407,7 @@ const Purchase = () => {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="secondary" onClick={() => handleCancel(negotiationOrder.id)}>Cancel Order</Button>
+                    <Button variant="secondary" onClick={() => { setOrderToCancel(negotiationOrder.id); setShowCancelConfirm(true); }}>Cancel Order</Button>
                     <Button variant="primary" onClick={() => { handleConfirm(negotiationOrder.id); setView('list'); }}>Confirm & Close</Button>
                 </div>
               </div>
@@ -612,7 +614,7 @@ const Purchase = () => {
                 <div className="flex gap-2">
                     {o.status === 'DRAFT' && (
                         <>
-                            <Button variant="secondary" onClick={() => handleCancel(o.id)} size="sm">
+                            <Button variant="secondary" onClick={() => { setOrderToCancel(o.id); setShowCancelConfirm(true); }} size="sm">
                                 <XCircle className="w-4 h-4 mr-1" /> Cancel
                             </Button>
                             <Button variant="orange" onClick={() => handleStartNegotiation(o.id)} size="sm">
@@ -625,7 +627,7 @@ const Purchase = () => {
                     )}
                     {o.status === 'NEGOTIATION' && (
                         <>
-                             <Button variant="secondary" onClick={() => handleCancel(o.id)} size="sm">
+                             <Button variant="secondary" onClick={() => { setOrderToCancel(o.id); setShowCancelConfirm(true); }} size="sm">
                                 <XCircle className="w-4 h-4 mr-1" /> Cancel
                             </Button>
                             <Button 
@@ -646,7 +648,7 @@ const Purchase = () => {
                     )}
                     {(o.status === 'CONFIRMED' || o.status === 'PARTIALLY_RECEIVED') && (
                         <>
-                             <Button variant="secondary" onClick={() => handleCancel(o.id)} size="sm">
+                             <Button variant="secondary" onClick={() => { setOrderToCancel(o.id); setShowCancelConfirm(true); }} size="sm">
                                 <XCircle className="w-4 h-4 mr-1" /> Cancel
                             </Button>
                             <Button variant="primary" onClick={() => openReceiveModal(o)} size="sm">
@@ -731,6 +733,16 @@ const Purchase = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog 
+        isOpen={showCancelConfirm}
+        onClose={() => { setShowCancelConfirm(false); setOrderToCancel(null); }}
+        onConfirm={handleCancel}
+        title="Cancel Purchase Order"
+        description="Are you sure you want to cancel this purchase order? This action cannot be undone."
+        confirmText="Cancel Order"
+        variant="danger"
+      />
     </div>
   );
 };

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Factory, CheckCircle2, Activity, Clock, Box, Plus, Search, ArrowLeft, User as UserIcon, ListTree, Package, Timer, XCircle, ChevronRight } from 'lucide-react';
-import { Button, Card, Badge, Modal, Input } from '../components/UI';
+import { Button, Card, Badge, Modal, Input, ConfirmDialog } from '../components/UI';
 import type { ManufacturingOrder, Product, BoM, WorkOrder, User, MOComponent } from '../types';
 import axios from 'axios';
 
@@ -12,6 +12,8 @@ const Manufacturing = () => {
   const [boms, setBoms] = useState<BoM[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [currentMO, setCurrentMO] = useState<ManufacturingOrder | null>(null);
@@ -88,12 +90,12 @@ const Manufacturing = () => {
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!window.confirm("Are you sure you want to cancel this production order?")) return;
+  const handleCancel = async () => {
+    if (!orderToCancel) return;
     try {
-      await api.post(`/manufacturing/${id}/cancel`);
+      await api.post(`/manufacturing/${orderToCancel}/cancel`);
       fetchData();
-      refreshCurrentMO(id);
+      refreshCurrentMO(orderToCancel);
     } catch (err: unknown) {
       let errorMsg = "Cancellation failed";
       if (axios.isAxiosError(err)) {
@@ -163,7 +165,7 @@ const Manufacturing = () => {
           <div className="flex gap-3">
              {isDraft && (
                <>
-                 <Button variant="danger" onClick={() => handleCancel(currentMO.id)}>
+                 <Button variant="danger" onClick={() => { setOrderToCancel(currentMO.id); setShowCancelConfirm(true); }}>
                    <XCircle className="w-4 h-4 mr-2" /> Cancel MO
                  </Button>
                  <Button onClick={() => handleConfirm(currentMO.id)}>
@@ -173,7 +175,7 @@ const Manufacturing = () => {
              )}
              {isConfirmed && (
                <>
-                 <Button variant="danger" onClick={() => handleCancel(currentMO.id)}>
+                 <Button variant="danger" onClick={() => { setOrderToCancel(currentMO.id); setShowCancelConfirm(true); }}>
                    <XCircle className="w-4 h-4 mr-2" /> Cancel MO
                  </Button>
                  <Button variant="success" onClick={() => handleProduce(currentMO.id)}>
@@ -443,6 +445,16 @@ const Manufacturing = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog 
+        isOpen={showCancelConfirm}
+        onClose={() => { setShowCancelConfirm(false); setOrderToCancel(null); }}
+        onConfirm={handleCancel}
+        title="Cancel Manufacturing Order"
+        description="Are you sure you want to cancel this production order? This action cannot be undone."
+        confirmText="Cancel Order"
+        variant="danger"
+      />
     </div>
   );
 };

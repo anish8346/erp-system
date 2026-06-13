@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, CheckCircle, Clock, ShoppingBag, Truck, AlertTriangle, Package, Search, XCircle, ArrowLeft, User as UserIcon, MapPin } from 'lucide-react';
-import { Button, Card, Badge, Modal, Input } from '../components/UI';
+import { Button, Card, Badge, Modal, Input, ConfirmDialog } from '../components/UI';
 import type { SalesOrder, Product, SalesOrderLine, User } from '../types';
 import axios from 'axios';
 
@@ -12,6 +12,8 @@ const Sales = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showDeliverModal, setShowDeliverModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<SalesOrder | null>(null);
   const [deliverQtys, setDeliverQtys] = useState<Record<string, number>>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,14 +92,14 @@ const Sales = () => {
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+  const handleCancel = async () => {
+    if (!orderToCancel) return;
     try {
-      await api.post(`/sales/${id}/cancel`);
+      await api.post(`/sales/${orderToCancel}/cancel`);
       fetchData();
-      if (currentOrder && currentOrder.id === id) {
+      if (currentOrder && currentOrder.id === orderToCancel) {
         const res = await api.get('/sales');
-        const updated = res.data.find((o: SalesOrder) => o.id === id);
+        const updated = res.data.find((o: SalesOrder) => o.id === orderToCancel);
         setCurrentOrder(updated);
       }
     } catch (err: unknown) {
@@ -167,7 +169,7 @@ const Sales = () => {
           <div className="flex gap-3">
              {currentOrder.status === 'DRAFT' && (
                <>
-                 <Button variant="danger" onClick={() => handleCancel(currentOrder.id)}>
+                 <Button variant="danger" onClick={() => { setOrderToCancel(currentOrder.id); setShowCancelConfirm(true); }}>
                    <XCircle className="w-4 h-4 mr-2" /> Cancel Order
                  </Button>
                  <Button onClick={() => handleConfirm(currentOrder.id)}>
@@ -177,7 +179,7 @@ const Sales = () => {
              )}
              {(currentOrder.status === 'CONFIRMED' || currentOrder.status === 'PARTIALLY_DELIVERED') && (
                <>
-                 <Button variant="danger" onClick={() => handleCancel(currentOrder.id)}>
+                 <Button variant="danger" onClick={() => { setOrderToCancel(currentOrder.id); setShowCancelConfirm(true); }}>
                    <XCircle className="w-4 h-4 mr-2" /> Cancel Order
                  </Button>
                  <Button variant="primary" onClick={() => openDeliverModal(currentOrder)}>
@@ -368,7 +370,7 @@ const Sales = () => {
                 <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                   {o.status === 'DRAFT' && (
                     <>
-                      <Button variant="ghost" onClick={() => handleCancel(o.id)} className="text-rose-500 hover:bg-rose-50">Cancel</Button>
+                      <Button variant="ghost" onClick={() => { setOrderToCancel(o.id); setShowCancelConfirm(true); }} className="text-rose-500 hover:bg-rose-50">Cancel</Button>
                       <Button onClick={() => handleConfirm(o.id)} className="font-bold text-xs px-3 py-1.5">
                         Confirm
                       </Button>
@@ -411,6 +413,16 @@ const Sales = () => {
            </div>
         )}
       </div>
+
+      <ConfirmDialog 
+        isOpen={showCancelConfirm}
+        onClose={() => { setShowCancelConfirm(false); setOrderToCancel(null); }}
+        onConfirm={handleCancel}
+        title="Cancel Sales Order"
+        description="Are you sure you want to cancel this sales order? This action cannot be undone."
+        confirmText="Cancel Order"
+        variant="danger"
+      />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New Sales Order">
         <form onSubmit={handleSubmit} className="space-y-6">

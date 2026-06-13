@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, Trash2, ListTree, Timer, Package, ChevronRight } from 'lucide-react';
-import { Button, Card, Badge, Modal, Input } from '../components/UI';
+import { Button, Card, Badge, Modal, Input, ConfirmDialog } from '../components/UI';
 import type { BoM, Product, WorkCenter, BoMLine, Operation } from '../types';
 import axios from 'axios';
 
@@ -11,6 +11,8 @@ const Boms = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [workCenters, setWorkCenters] = useState<WorkCenter[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bomToDelete, setBomToDelete] = useState<string | null>(null);
   const [newBom, setNewBom] = useState({
     productId: '',
     name: '',

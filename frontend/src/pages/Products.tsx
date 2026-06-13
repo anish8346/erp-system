@@ -1,8 +1,8 @@
-
+// frontend/src/pages/Products.tsx
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Package, X, ArrowUpRight } from 'lucide-react';
-import { Button, Input, Card, Badge, Modal } from '../components/UI';
+import { Button, Input, Card, Badge, Modal, ConfirmDialog } from '../components/UI';
 import type { Product, Vendor, ProcurementType, SupplyMethod } from '../types';
 import axios from 'axios';
 
@@ -13,6 +13,8 @@ const Products = () => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adjustData, setAdjustData] = useState({ id: '', name: '', adjustment: 0, reason: '' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,113 +99,129 @@ const Products = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product? This will only work if the product is not used in any Sales Orders.")) {
-      try {
-        await api.delete(`/products/${id}`);
-        fetchData();
-      } catch (err: unknown) {
-        let errorMsg = "Operation failed";
-        if (axios.isAxiosError(err)) {
-          errorMsg = err.response?.data?.error || errorMsg;
-        }
-        alert(errorMsg);
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      await api.delete(`/products/${productToDelete}`);
+      fetchData();
+    } catch (err: unknown) {
+      let errorMsg = "Operation failed";
+      if (axios.isAxiosError(err)) {
+        errorMsg = err.response?.data?.error || errorMsg;
       }
+      alert(errorMsg);
     }
   };
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.vendor?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-bold text-luxury-brown">Inventory</h2>
-          <p className="text-warm-taupe text-sm font-medium">Manage products, stock levels, and procurement strategies.</p>
+          <h2 className="text-2xl font-semibold text-gray-800">Products & Inventory</h2>
+          <p className="text-gray-500 text-sm mt-1">Manage your product catalog and real-time stock levels.</p>
         </div>
-        <Button onClick={() => setShowModal(true)} className="font-semibold">
-          <Plus className="w-5 h-5" /> Add New Product
+        <Button onClick={() => setShowModal(true)} variant="primary" className="shadow-sm">
+          <Plus className="w-4 h-4 mr-2" /> Add Product
         </Button>
       </div>
 
-      <Card className="overflow-hidden border-none shadow-lg bg-white/50 backdrop-blur-md">
-        <div className="p-4 border-b border-soft-cream bg-white flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-taupe/60" />
+      <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
-              placeholder="Search inventory..." 
-              className="w-full pl-10 pr-4 py-2 bg-faded-white border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium"
+              placeholder="Search by name, reference, or vendor..." 
+              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-gray-300 outline-none transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="secondary" size="sm" className="font-semibold">
-            <Filter className="w-4 h-4" /> Filter
-          </Button>
+          <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
+            <Filter className="w-3.5 h-3.5" />
+            <span>{filteredProducts.length} Products found</span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-faded-white/50">
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60">Product Info</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60">Procurement</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60 text-right">Pricing</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60 text-center">Stock Details</th>
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-wider text-warm-taupe/60 text-right">Action</th>
+              <tr className="bg-gray-50/30">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">Product & Ref</th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">Vendor / Contact</th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">Procurement</th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 text-right">Price</th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 text-center">Stock Levels</th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100">
               {filteredProducts.map((p) => (
-                <tr key={p.id} className="group hover:bg-blue-50/30 transition-colors">
-                  <td className="px-4 py-5">
-                    <p className="font-bold text-luxury-brown">{p.name}</p>
-                    <div className="flex items-center gap-2">
-                       <span className="text-xs text-warm-taupe/60 font-mono mt-0.5">{p.id.slice(0,8)}</span>
-                       {p.vendor && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">V: {p.vendor.name}</span>}
+                <tr key={p.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-900">{p.name}</span>
+                      <span className="text-[10px] font-mono text-gray-400 mt-0.5">#{p.id.slice(0,8).toUpperCase()}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-5">
+                  <td className="px-6 py-4">
+                    {p.vendor ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                          {p.vendor.name.charAt(0)}
+                        </div>
+                        <span className="text-sm text-gray-600 font-medium">{p.vendor.name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300 italic">Internal</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
-                  <Badge variant={p.procurementType === 'MTO' ? 'orange' : 'success'}>
-                    {p.procurementType === 'MTO' ? 'Procure on Demand' : 'Make to Stock'}
-                  </Badge>
-                  <span className="text-[10px] font-semibold text-warm-taupe/60 uppercase tracking-wider">via {p.supplyMethod}</span>
-                </div>
-              </td>
-              <td className="px-4 py-5 text-right">
-                <p className="font-bold text-luxury-brown">₹{p.salesPrice.toFixed(2)}</p>
-                <p className="text-[10px] text-warm-taupe/60 font-bold uppercase">Cost: ₹{p.costPrice.toFixed(2)}</p>
-              </td>
-              <td className="px-4 py-5">
-                <div className="flex items-center justify-center gap-4">
-                   <StockStat label="On Hand" value={p.qtyOnHand} color="text-luxury-brown" />
-                   <StockStat label="Reserved" value={p.qtyReserved} color="text-blue-600" />
-                   <StockStat label="Free to Use" value={p.qtyOnHand - p.qtyReserved} color="text-emerald-600" bold />
-                </div>
-              </td>
-                  <td className="px-4 py-5 text-right">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
+                        p.procurementType === 'MTO' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        {p.procurementType === 'MTO' ? 'ON DEMAND' : 'MAKE TO STOCK'}
+                      </span>
+                      <span className="text-[9px] text-gray-400 font-medium uppercase ml-1 tracking-tight">{p.supplyMethod}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-sm font-semibold text-gray-900">₹{p.salesPrice.toLocaleString()}</p>
+                    <p className="text-[9px] text-gray-400 font-medium uppercase mt-0.5">Cost: ₹{p.costPrice.toLocaleString()}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-6">
+                       <SimpleStockStat label="Hand" value={p.qtyOnHand} color="text-gray-600" />
+                       <SimpleStockStat label="Res" value={p.qtyReserved} color="text-gray-400" />
+                       <SimpleStockStat label="Free" value={p.qtyOnHand - p.qtyReserved} color="text-emerald-600" isBold />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-1 transition-opacity">
                       <button 
-                        title="Adjust Stock"
                         onClick={() => { setAdjustData({ id: p.id, name: p.name, adjustment: 0, reason: '' }); setShowAdjustModal(true); }}
-                        className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
+                        className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Adjust Stock"
                       >
                         <ArrowUpRight className="w-4 h-4" />
                       </button>
                       <button 
-                        title="Edit Info"
                         onClick={() => { setEditingProduct({...p}); setShowEditModal(true); }}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit Info"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
+                        onClick={() => { setProductToDelete(p.id); setShowDeleteConfirm(true); }}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete Product"
-                        onClick={() => handleDelete(p.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -213,13 +231,26 @@ const Products = () => {
               ))}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center text-warm-taupe/60 font-medium">No products found.</td>
+                  <td colSpan={6} className="py-20 text-center">
+                    <Package className="w-10 h-10 text-gray-100 mx-auto mb-3" />
+                    <p className="text-gray-400 text-sm font-medium">No products found matching your search.</p>
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
+
+      <ConfirmDialog 
+        isOpen={showDeleteConfirm}
+        onClose={() => { setShowDeleteConfirm(false); setProductToDelete(null); }}
+        onConfirm={handleDelete}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This will only work if the product is not used in any Sales Orders."
+        confirmText="Delete Product"
+        variant="danger"
+      />
 
       {/* CREATE MODAL */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Create New Product">
@@ -467,19 +498,18 @@ const Products = () => {
   );
 };
 
-interface StockStatProps {
+interface SimpleStockStatProps {
   label: string;
   value: number;
   color: string;
-  bold?: boolean;
+  isBold?: boolean;
 }
 
-const StockStat = ({ label, value, color, bold }: StockStatProps) => (
-  <div className="flex flex-col items-center">
-    <span className="text-[9px] font-semibold uppercase text-warm-taupe/60 tracking-wider mb-0.5">{label}</span>
-    <span className={`text-sm ${bold ? 'font-bold' : 'font-medium'} ${color}`}>{value}</span>
+const SimpleStockStat = ({ label, value, color, isBold }: SimpleStockStatProps) => (
+  <div className="flex flex-col items-center min-w-[40px]">
+    <span className="text-[9px] font-bold uppercase text-gray-400 tracking-tight mb-0.5">{label}</span>
+    <span className={`text-xs ${isBold ? 'font-bold' : 'font-medium'} ${color}`}>{value}</span>
   </div>
 );
 
 export default Products;
-
