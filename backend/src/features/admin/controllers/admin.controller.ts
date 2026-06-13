@@ -42,7 +42,8 @@ export class AdminController {
 
   static async getUsers(req: Request, res: Response) {
     try {
-      const users = await AdminService.getUsers();
+      const { role } = req.query;
+      const users = await AdminService.getUsers(role as string | undefined);
       res.json(users);
     } catch (error: unknown) {
       res.status(500).json({ error: error instanceof Error ? error.message : String(error) });

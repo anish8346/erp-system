@@ -91,9 +91,10 @@ export class AdminRepository {
     return prisma.workCenter.findMany();
   }
 
-  static async getUsers() {
+  static async getUsers(role?: string) {
     return prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
+      where: role ? { role } : {},
+      orderBy: { name: 'asc' },
       select: { id: true, email: true, name: true, role: true, createdAt: true }
     });
   }

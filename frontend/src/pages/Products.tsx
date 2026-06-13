@@ -32,7 +32,7 @@ const Products = () => {
       const [prodRes, vendRes, bomRes] = await Promise.all([
         api.get('/products'),
         api.get('/vendors'),
-        api.get('/manufacturing/boms'),
+        api.get('/boms'),
       ]);
       setProducts(prodRes.data);
       setVendors(vendRes.data);

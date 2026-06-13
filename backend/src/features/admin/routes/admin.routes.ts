@@ -6,6 +6,7 @@ export const configRouter = Router();
 configRouter.get('/audit-logs', authenticate, AdminController.getAuditLogs);
 configRouter.post('/work-centers', authenticate, AdminController.createWorkCenter);
 configRouter.get('/work-centers', authenticate, AdminController.getWorkCenters);
+configRouter.get('/users', authenticate, AdminController.getUsers);
 
 export const requestRouter = Router();
 requestRouter.post('/submit', AdminController.submitRequest);
