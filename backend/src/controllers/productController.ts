@@ -6,15 +6,17 @@ import { logActivity } from '../utils/logger';
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
     const { name, salesPrice, costPrice, procurementType, supplyMethod, vendorId, bomId, qtyOnHand } = req.body;
+    if (!name) return res.status(400).json({ error: 'Product name is required.' });
+
     const initialQty = Number(qtyOnHand) || 0;
 
     const product = await prisma.product.create({
       data: {
         name,
-        salesPrice,
-        costPrice,
-        procurementType,
-        supplyMethod,
+        salesPrice: Number(salesPrice) || 0,
+        costPrice: Number(costPrice) || 0,
+        procurementType: procurementType || 'MTS',
+        supplyMethod: supplyMethod || 'PURCHASE',
         vendorId: vendorId || null,
         bomId,
         qtyOnHand: initialQty,
@@ -22,12 +24,10 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Log the activity
     if (req.user) {
       await logActivity(req.user.id, 'CREATE', 'PRODUCT', product.id, `Created product: ${product.name} with initial stock ${initialQty}`);
     }
 
-    // If initial stock is provided, create a ledger entry
     if (initialQty > 0) {
       await prisma.stockLedger.create({
         data: {
@@ -41,16 +41,20 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(product);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[CreateProduct Error]:', error);
+    res.status(500).json({ error: 'Failed to create product. Database error.' });
   }
 };
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const products = await prisma.product.findMany();
+    const products = await prisma.product.findMany({
+        include: { vendor: true }
+    });
     res.json(products);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[GetProducts Error]:', error);
+    res.status(500).json({ error: 'Failed to fetch inventory list.' });
   }
 };
 
@@ -60,6 +64,7 @@ export const getProductById = async (req: Request, res: Response) => {
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
+        vendor: true,
         BoM: {
           include: {
             bomLines: {
@@ -69,10 +74,11 @@ export const getProductById = async (req: Request, res: Response) => {
         }
       }
     });
-    if (!product) return res.status(404).json({ error: 'Product not found' });
+    if (!product) return res.status(404).json({ error: 'Product not found.' });
     res.json(product);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[GetProductById Error]:', error);
+    res.status(500).json({ error: 'Error retrieving product details.' });
   }
 };
 
@@ -85,8 +91,8 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       where: { id },
       data: {
         name,
-        salesPrice,
-        costPrice,
+        salesPrice: Number(salesPrice),
+        costPrice: Number(costPrice),
         procurementType,
         supplyMethod,
         vendorId: vendorId || null,
@@ -99,7 +105,8 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 
     res.json(product);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[UpdateProduct Error]:', error);
+    res.status(500).json({ error: 'Failed to update product details.' });
   }
 };
 
@@ -107,10 +114,9 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Check if product is in use
     const linesCount = await prisma.salesOrderLine.count({ where: { productId: id } });
     if (linesCount > 0) {
-      return res.status(400).json({ error: 'Cannot delete product: It is linked to existing Sales Orders.' });
+      return res.status(400).json({ error: 'Cannot delete: This product has historical Sales Orders linked to it.' });
     }
 
     const product = await prisma.product.delete({ where: { id } });
@@ -119,9 +125,10 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
       await logActivity(req.user.id, 'DELETE', 'PRODUCT', id, `Deleted product: ${product.name}`);
     }
 
-    res.json({ message: 'Product deleted successfully' });
+    res.json({ message: 'Product deleted successfully.' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[DeleteProduct Error]:', error);
+    res.status(500).json({ error: 'System could not delete the product.' });
   }
 };
 
@@ -130,6 +137,10 @@ export const adjustStock = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { adjustment, reason } = req.body; 
     
+    if (!adjustment || isNaN(Number(adjustment))) {
+      return res.status(400).json({ error: 'A valid adjustment quantity is required.' });
+    }
+
     const product = await prisma.$transaction(async (tx) => {
       const p = await tx.product.update({
         where: { id },
@@ -154,7 +165,8 @@ export const adjustStock = async (req: AuthRequest, res: Response) => {
 
     res.json(product);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[AdjustStock Error]:', error);
+    res.status(500).json({ error: 'Failed to apply stock adjustment.' });
   }
 };
 
@@ -166,6 +178,7 @@ export const getStockLedger = async (req: Request, res: Response) => {
     });
     res.json(ledger);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[GetLedger Error]:', error);
+    res.status(500).json({ error: 'Failed to retrieve stock ledger.' });
   }
 };

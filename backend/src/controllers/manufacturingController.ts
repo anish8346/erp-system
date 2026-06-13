@@ -6,8 +6,10 @@ import { logActivity } from '../utils/logger';
 export const createMO = async (req: AuthRequest, res: Response) => {
   try {
     const { productId, quantity, bomId } = req.body;
+    if (!productId || !bomId) {
+      return res.status(400).json({ error: 'Product and BoM are required to plan production.' });
+    }
     
-    // Fetch operations linked to this BoM
     const bom = await prisma.boM.findUnique({
       where: { id: bomId },
       include: { operations: true }
@@ -16,14 +18,14 @@ export const createMO = async (req: AuthRequest, res: Response) => {
     const mo = await prisma.manufacturingOrder.create({
       data: {
         productId,
-        quantity,
+        quantity: Number(quantity),
         bomId,
         status: 'DRAFT',
         WorkOrders: {
           create: (bom?.operations || []).map(op => ({
             operationId: op.id,
             status: 'PENDING',
-            duration: op.duration * quantity, // Scaled by quantity
+            duration: op.duration * Number(quantity),
           }))
         }
       },
@@ -35,7 +37,8 @@ export const createMO = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(mo);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[CreateMO Error]:', error);
+    res.status(500).json({ error: 'Failed to create manufacturing order.' });
   }
 };
 
@@ -45,34 +48,30 @@ export const produceMO = async (req: AuthRequest, res: Response) => {
     const mo = await prisma.manufacturingOrder.findUnique({
       where: { id },
       include: { 
-        bom: { include: { bomLines: true } },
+        bom: { include: { bomLines: { include: { component: true } } } },
         product: true,
         WorkOrders: true
       },
     });
 
-    if (!mo) return res.status(404).json({ error: 'MO not found' });
-    if (mo.status === 'DONE') return res.status(400).json({ error: 'MO already completed' });
+    if (!mo) return res.status(404).json({ error: 'MO not found.' });
+    if (mo.status === 'DONE') return res.status(400).json({ error: 'Production already marked as complete.' });
 
-    // Check if all WorkOrders are DONE
     const allWorkOrdersDone = mo.WorkOrders.every(wo => wo.status === 'DONE');
     if (mo.WorkOrders.length > 0 && !allWorkOrdersDone) {
-      return res.status(400).json({ error: 'Cannot complete MO: Not all work steps are finished.' });
+      return res.status(400).json({ error: 'Cannot finalize: Some work steps are still in progress.' });
     }
 
-    // Transaction: Consume components and produce finished good
     await prisma.$transaction(async (tx) => {
-      // 1. Validate and Consume components
       for (const line of mo.bom.bomLines) {
         const requiredQty = line.quantity * mo.quantity;
         
-        // Fetch current stock for validation
         const component = await tx.product.findUnique({
           where: { id: line.componentId }
         });
 
         if (!component || component.qtyOnHand < requiredQty) {
-          throw new Error(`Insufficient stock for component: ${component?.name || 'Unknown'}. Required: ${requiredQty}, Available: ${component?.qtyOnHand || 0}`);
+          throw new Error(`Insufficient stock for component: ${component?.name || 'Unknown'}. Needed: ${requiredQty}, have: ${component?.qtyOnHand || 0}`);
         }
 
         await tx.product.update({
@@ -90,12 +89,10 @@ export const produceMO = async (req: AuthRequest, res: Response) => {
         });
       }
 
-      // 2. Produce Finished Good
       await tx.product.update({
         where: { id: mo.productId },
         data: { 
             qtyOnHand: { increment: mo.quantity },
-            // If it was reserved (MTO), reduce reservation
             qtyReserved: { decrement: mo.quantity > mo.product.qtyReserved ? mo.product.qtyReserved : mo.quantity }
         },
       });
@@ -119,9 +116,10 @@ export const produceMO = async (req: AuthRequest, res: Response) => {
       await logActivity(req.user.id, 'PRODUCE', 'MO', id, `Completed production of ${mo.quantity} ${mo.product.name}`);
     }
 
-    res.json({ message: 'Production completed successfully' });
+    res.json({ message: 'Production completed successfully.' });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[ProduceMO Error]:', error);
+    res.status(500).json({ error: error.message || 'Failed to finalize production.' });
   }
 };
 
@@ -142,17 +140,20 @@ export const updateWorkOrderStatus = async (req: AuthRequest, res: Response) => 
 
     res.json(wo);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('[UpdateWOStatus Error]:', error);
+    res.status(500).json({ error: 'Failed to update work step status.' });
   }
 };
 
 export const getMOs = async (req: Request, res: Response) => {
     try {
       const mos = await prisma.manufacturingOrder.findMany({
-        include: { product: true, bom: true },
+        include: { product: true, bom: true, WorkOrders: { include: { operation: { include: { workCenter: true } } } } },
+        orderBy: { createdAt: 'desc' }
       });
       res.json(mos);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('[GetMOs Error]:', error);
+      res.status(500).json({ error: 'Failed to retrieve manufacturing orders.' });
     }
 };

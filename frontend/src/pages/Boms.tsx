@@ -71,8 +71,8 @@ const Boms = () => {
         operations: [{ name: '', workCenterId: '', duration: 30 }]
       });
       fetchData();
-    } catch (err) {
-      alert("Failed to save Bill of Materials");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to save Bill of Materials");
     }
   };
 

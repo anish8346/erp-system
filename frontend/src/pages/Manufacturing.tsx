@@ -51,8 +51,8 @@ const Manufacturing = () => {
       setShowForm(false);
       setNewMO({ productId: '', quantity: 1, bomId: '' });
       fetchData();
-    } catch (err) {
-      alert("Failed to create manufacturing order");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to create manufacturing order");
     }
   };
 
@@ -69,8 +69,8 @@ const Manufacturing = () => {
     try {
       await api.patch(`/manufacturing/work-order/${woId}/status`, { status });
       fetchData();
-    } catch (err) {
-      alert("Failed to update work order status");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to update work order status");
     }
   };
 

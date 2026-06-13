@@ -61,8 +61,8 @@ const Products = () => {
       setShowModal(false);
       setNewProduct({ name: '', salesPrice: 0, costPrice: 0, qtyOnHand: 0, procurementType: 'MTS', supplyMethod: 'PURCHASE', vendorId: '' });
       fetchData();
-    } catch (err) {
-      alert("Failed to create product");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to create product. Check system logs.");
     }
   };
 
@@ -72,8 +72,8 @@ const Products = () => {
       await api.put(`/products/${editingProduct.id}`, editingProduct);
       setShowEditModal(false);
       fetchData();
-    } catch (err) {
-      alert("Failed to update product");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to update product details.");
     }
   };
 
@@ -87,8 +87,8 @@ const Products = () => {
       setShowAdjustModal(false);
       setAdjustData({ id: '', name: '', adjustment: 0, reason: '' });
       fetchData();
-    } catch (err) {
-      alert("Failed to adjust stock");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to apply manual adjustment.");
     }
   };
 
@@ -98,7 +98,7 @@ const Products = () => {
         await api.delete(`/products/${id}`);
         fetchData();
       } catch (err: any) {
-        alert(err.response?.data?.error || "Failed to delete product");
+        alert(err.response?.data?.error || "System could not delete this product.");
       }
     }
   };

@@ -59,8 +59,8 @@ const Sales = () => {
       setShowModal(false);
       setNewOrder({ customerName: '', productId: '', quantity: 1 });
       fetchData();
-    } catch (err) {
-      alert("Failed to create sales order");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to create sales order");
     }
   };
 
@@ -68,8 +68,8 @@ const Sales = () => {
     try {
       await api.post(`/sales/${id}/confirm`);
       fetchData();
-    } catch (err) {
-      alert("Confirmation failed. Check logs for shortages.");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Confirmation failed. Check logs for shortages.");
     }
   };
 

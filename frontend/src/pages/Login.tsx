@@ -10,13 +10,14 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
-      window.location.href = '/dashboard'; // Redirect to protected area
+      window.location.href = '/dashboard'; 
     } catch (err: any) {
-      setError('Invalid email or password');
+      setError(err.response?.data?.error || 'System error. Please try again.');
     }
   };
 

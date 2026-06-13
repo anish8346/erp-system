@@ -48,21 +48,25 @@ const Purchase = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const product = products.find(p => p.id === newOrder.productId);
-    const vendor = vendors.find(v => v.id === newOrder.vendorId);
-    
-    await api.post('/purchase', {
-      vendorId: newOrder.vendorId,
-      vendorName: vendor?.name || 'Unknown',
-      orderLines: [{
-        productId: newOrder.productId,
-        quantity: newOrder.quantity,
-        price: product.costPrice,
-      }]
-    });
-    setShowForm(false);
-    setNewOrder({ vendorId: '', productId: '', quantity: 1 });
-    fetchData();
+    try {
+      const product = products.find(p => p.id === newOrder.productId);
+      const vendor = vendors.find(v => v.id === newOrder.vendorId);
+      
+      await api.post('/purchase', {
+        vendorId: newOrder.vendorId,
+        vendorName: vendor?.name || 'Unknown',
+        orderLines: [{
+          productId: newOrder.productId,
+          quantity: newOrder.quantity,
+          price: product.costPrice,
+        }]
+      });
+      setShowForm(false);
+      setNewOrder({ vendorId: '', productId: '', quantity: 1 });
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Failed to create procurement order");
+    }
   };
 
   const openReceiveModal = (order: PurchaseOrder) => {
