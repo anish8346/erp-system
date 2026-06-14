@@ -25,8 +25,9 @@ const AuditLogs = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await api.get('/config/users');
-        setUsers(res.data);
+        // Fetch users for the filter dropdown - use a large limit to get most users
+        const res = await api.get('/config/users', { params: { limit: 100 } });
+        setUsers(res.data.users || []);
       } catch (err) {
         console.error("Failed to fetch users", err);
       }
@@ -45,9 +46,9 @@ const AuditLogs = () => {
       if (filters.action !== 'all') logParams.action = filters.action;
 
       const res = await api.get('/config/audit-logs', { params: logParams });
-      setLogs(res.data.logs);
-      setSummary(res.data.summary);
-      setPagination(res.data.pagination);
+      setLogs(res.data.logs || []);
+      setSummary(res.data.summary || { total: 0, create: 0, update: 0, delete: 0 });
+      setPagination(res.data.pagination || { page: 1, limit: 20, totalPages: 0, totalItems: 0 });
     } catch (err) {
       console.error("Failed to fetch audit logs", err);
     } finally {
@@ -251,7 +252,7 @@ const AuditLogs = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="text-[11px] font-bold text-luxury-brown uppercase tracking-tight">{log.entityType}</span>
-                          <span className="text-[10px] font-mono text-warm-taupe/60">ID: {log.entityId.slice(0,8).toUpperCase()}</span>
+                          <span className="text-[10px] font-mono text-warm-taupe/60">ID: {log.entityId?.slice(0,8).toUpperCase() || 'N/A'}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
