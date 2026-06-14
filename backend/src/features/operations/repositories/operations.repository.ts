@@ -142,4 +142,31 @@ export class OperationsRepository {
       },
     };
   }
+
+  static async createBoM(data: { name: string; productId: string; components: any[]; operations: any[] }) {
+    return await prisma.boM.create({
+      data: {
+        name,
+        productId,
+        bomLines: {
+          create: (data.components || []).map((c: any) => ({
+            componentId: c.componentId,
+            quantity: Number(c.quantity)
+          }))
+        },
+        operations: {
+          create: (data.operations || []).map((op: any) => ({
+            name: op.name,
+            workCenterId: op.workCenterId,
+            duration: Number(op.duration)
+          }))
+        }
+      },
+      include: {
+        product: true,
+        bomLines: { include: { component: true } },
+        operations: { include: { workCenter: true } }
+      }
+    });
+  }
 }

@@ -5,6 +5,29 @@ import { AutomationService } from '../../../core/utils/automation.js';
 import type { MOStatus, WOStatus } from '../../../core/types/index.js';
 
 export class OperationsService {
+  static async createBoM(data: any, userId?: string) {
+    const { name, productId, components, operations } = data;
+    if (!name || !productId || !components?.length) {
+      throw new Error('BoM name, finished product, and at least one component are required.');
+    }
+    if (!operations?.length) {
+      throw new Error('At least one production operation is required.');
+    }
+
+    const bom = await OperationsRepository.createBoM({
+      name,
+      productId,
+      components,
+      operations
+    });
+
+    if (userId) {
+      await logActivity(userId, 'CREATE', 'BOM', bom.id, `Created BoM '${name}' for product ${productId}`);
+    }
+
+    return bom;
+  }
+
   static async createMO(data: any, userId?: string) {
     const bom = await OperationsRepository.findBoMById(data.bomId);
     if (!bom) throw new Error('Bill of Materials not found.');

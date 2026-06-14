@@ -39,6 +39,15 @@ export class OperationsController {
     }
   }
 
+  static async createBoM(req: AuthRequest, res: Response) {
+    try {
+      const bom = await OperationsService.createBoM(req.body, req.user?.id);
+      res.status(201).json(bom);
+    } catch (error: unknown) {
+      res.status(400).json({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
   static async getMOs(req: AuthRequest, res: Response) {
     try {
       const filters = {

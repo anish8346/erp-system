@@ -28,3 +28,4 @@ bomRouter.get('/', authenticate, authorize(['MFG', 'INVENTORY', 'SALES', 'PURCHA
         res.status(500).json({ error: 'Failed to fetch Bill of Materials.' });
     }
 });
+bomRouter.post('/', authenticate, authorize(['MFG', 'INVENTORY']), OperationsController.createBoM);
