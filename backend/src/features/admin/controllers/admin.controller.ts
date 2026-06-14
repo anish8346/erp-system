@@ -42,9 +42,14 @@ export class AdminController {
 
   static async getUsers(req: Request, res: Response) {
     try {
-      const { role } = req.query;
-      const users = await AdminService.getUsers(role as string | undefined);
-      res.json(users);
+      const filters = {
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 20,
+        searchTerm: req.query.searchTerm as string,
+        role: req.query.role as string,
+      };
+      const result = await AdminService.getUsers(filters);
+      res.json(result);
     } catch (error: unknown) {
       res.status(500).json({ error: error instanceof Error ? error.message : String(error) });
     }

@@ -2,12 +2,13 @@ import prisma from '../../../core/database/prisma.js';
 import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem, SalesOrderStatus, CreateMOData, CreatePOData, SalesOrder, SalesOrderLine } from '../../../core/types/index.js';
 
 export class SalesRepository {
-  async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number }) {
-    const { customerName, customerAddress, salesPersonId, orderLines, totalAmount } = data;
+  async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number; customerId?: string }) {
+    const { customerName, customerAddress, salesPersonId, orderLines, totalAmount, customerId } = data;
     return await prisma.salesOrder.create({
       data: {
         customerName,
         customerAddress,
+        customerId,
         salesPersonId,
         status: 'DRAFT',
         totalAmount,
@@ -106,14 +107,23 @@ export class SalesRepository {
       where.status = status;
     }
 
-    if (startDate || endDate) {
+    if ((startDate && startDate.trim() !== '') || (endDate && endDate.trim() !== '')) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+      if (startDate && startDate.trim() !== '') {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          where.createdAt.gte = start;
+        }
       }
+      if (endDate && endDate.trim() !== '') {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          where.createdAt.lte = end;
+        }
+      }
+      // If after validation nothing was added, remove createdAt from where
+      if (Object.keys(where.createdAt).length === 0) delete where.createdAt;
     }
 
     const [orders, totalItems] = await Promise.all([

@@ -37,16 +37,14 @@ const AuditLogs = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      params.append('page', filters.page.toString());
-      params.append('limit', '20');
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      if (filters.userId !== 'all') params.append('userId', filters.userId);
-      if (filters.module !== 'all') params.append('module', filters.module);
-      if (filters.action !== 'all') params.append('action', filters.action);
+      const logParams: any = { page: filters.page, limit: 20 };
+      if (filters.startDate) logParams.startDate = filters.startDate;
+      if (filters.endDate) logParams.endDate = filters.endDate;
+      if (filters.userId !== 'all') logParams.userId = filters.userId;
+      if (filters.module !== 'all') logParams.module = filters.module;
+      if (filters.action !== 'all') logParams.action = filters.action;
 
-      const res = await api.get(`/config/audit-logs?${params.toString()}`);
+      const res = await api.get('/config/audit-logs', { params: logParams });
       setLogs(res.data.logs);
       setSummary(res.data.summary);
       setPagination(res.data.pagination);

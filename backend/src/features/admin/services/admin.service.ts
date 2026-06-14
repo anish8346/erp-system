@@ -21,8 +21,8 @@ export class AdminService {
     return AdminRepository.getWorkCenters();
   }
 
-  static async getUsers(role?: string) {
-    return AdminRepository.getUsers(role);
+  static async getUsers(filters: { page: number; limit: number; searchTerm?: string; role?: string }) {
+    return AdminRepository.getUsers(filters);
   }
 
   static async submitRequest(data: { name: string, email: string, company: string, message: string }) {

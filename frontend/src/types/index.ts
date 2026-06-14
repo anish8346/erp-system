@@ -17,6 +17,14 @@ export interface Vendor {
   address?: string | null;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  address?: string | null;
+  mobile?: string | null;
+  createdAt?: string;
+}
+
 export type ProcurementType = 'MTS' | 'MTO';
 export type SupplyMethod = 'MANUFACTURE' | 'PURCHASE';
 

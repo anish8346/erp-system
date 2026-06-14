@@ -15,14 +15,22 @@ export class AdminRepository {
 
     const where: any = {};
 
-    if (startDate || endDate) {
+    if ((startDate && startDate.trim() !== '') || (endDate && endDate.trim() !== '')) {
       where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt.lte = end;
+      if (startDate && startDate.trim() !== '') {
+        const start = new Date(startDate);
+        if (!isNaN(start.getTime())) {
+          where.createdAt.gte = start;
+        }
       }
+      if (endDate && endDate.trim() !== '') {
+        const end = new Date(endDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          where.createdAt.lte = end;
+        }
+      }
+      if (Object.keys(where.createdAt).length === 0) delete where.createdAt;
     }
 
     if (userId && userId !== 'all') {
@@ -91,12 +99,41 @@ export class AdminRepository {
     return prisma.workCenter.findMany();
   }
 
-  static async getUsers(role?: string) {
-    return prisma.user.findMany({
-      where: role ? { role } : {},
-      orderBy: { name: 'asc' },
-      select: { id: true, email: true, name: true, role: true, createdAt: true }
-    });
+  static async getUsers(filters: { page: number; limit: number; searchTerm?: string; role?: string }) {
+    const { page, limit, searchTerm, role } = filters;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (searchTerm) {
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+    if (role && role !== 'all') {
+      where.role = role;
+    }
+
+    const [users, totalItems] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: { id: true, email: true, name: true, role: true, createdAt: true },
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      users,
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+      },
+    };
   }
 
   static async submitRequest(data: { name: string, email: string, company: string, message: string }) {

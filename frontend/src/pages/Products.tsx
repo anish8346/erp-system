@@ -1,13 +1,14 @@
 // frontend/src/pages/Products.tsx
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Package, X, ArrowUpRight } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Package, X, ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Input, Card, Badge, Modal, ConfirmDialog } from '../components/UI';
-import type { Product, Vendor, ProcurementType, SupplyMethod } from '../types';
+import type { Product, Vendor, ProcurementType, SupplyMethod, PaginationMeta } from '../types';
 import axios from 'axios';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({ page: 1, limit: 20, totalPages: 0, totalItems: 0 });
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [boms, setBoms] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +19,8 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adjustData, setAdjustData] = useState({ id: '', name: '', adjustment: 0, reason: '' });
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [loading, setLoading] = useState(false);
+
   const [newProduct, setNewProduct] = useState({
     name: '',
     salesPrice: 0,
@@ -27,26 +29,39 @@ const Products = () => {
     procurementType: 'MTS' as ProcurementType,
     supplyMethod: 'PURCHASE' as SupplyMethod,
     vendorId: '',
+    bomId: '',
   });
 
-  const fetchData = async () => {
+  const fetchData = async (page = 1) => {
+    setLoading(true);
     try {
       const [prodRes, vendRes, bomRes] = await Promise.all([
-        api.get('/products'),
+        api.get('/products', { params: { page, limit: 20, searchTerm } }),
         api.get('/vendors'),
         api.get('/boms'),
       ]);
-      setProducts(prodRes.data);
+      setProducts(prodRes.data.products);
+      setPagination(prodRes.data.pagination);
       setVendors(vendRes.data);
       setBoms(bomRes.data);
     } catch (err) {
       console.error("Fetch data failed", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchData(1);
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const handlePageChange = (newPage: number) => {
+    fetchData(newPage);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +254,63 @@ const Products = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-400">
+            Showing <span className="text-gray-900">{products.length}</span> of <span className="text-gray-900">{pagination.totalItems}</span> products
+          </p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              disabled={pagination.page === 1 || loading}
+              onClick={() => handlePageChange(pagination.page - 1)}
+              className="px-2 h-8"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-1">
+              {[...Array(pagination.totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                if (
+                  pageNum === 1 || 
+                  pageNum === pagination.totalPages || 
+                  (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                        pagination.page === pageNum 
+                          ? 'bg-gray-800 text-white shadow-sm' 
+                          : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                } else if (
+                  pageNum === pagination.page - 2 || 
+                  pageNum === pagination.page + 2
+                ) {
+                  return <span key={pageNum} className="text-gray-400 text-xs mx-0.5">...</span>;
+                }
+                return null;
+              })}
+            </div>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              disabled={pagination.page === pagination.totalPages || loading}
+              onClick={() => handlePageChange(pagination.page + 1)}
+              className="px-2 h-8"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 

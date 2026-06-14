@@ -42,16 +42,17 @@ const Purchase = () => {
         api.get('/purchase'),
         api.get('/products'),
         api.get('/vendors'),
-        api.get('/users'),
+        api.get('/config/users'),
       ]);
-      setOrders(ordersRes.data);
-      setProducts(productsRes.data);
-      setVendors(vendorsRes.data);
-      setUsers(usersRes.data);
+      setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data?.orders || []));
+      setProducts(Array.isArray(productsRes.data) ? productsRes.data : (productsRes.data?.products || []));
+      setVendors(Array.isArray(vendorsRes.data) ? vendorsRes.data : (vendorsRes.data?.vendors || []));
+      setUsers(Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.users || usersRes.data || []));
       
       // Update negotiation order if it exists
       if (negotiationOrder) {
-          const updated = (ordersRes.data as PurchaseOrder[]).find(o => o.id === negotiationOrder.id);
+          const orders = Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data?.orders || []);
+          const updated = (orders as PurchaseOrder[]).find(o => o.id === negotiationOrder.id);
           if (updated) setNegotiationOrder(updated);
       }
     } catch (err) {

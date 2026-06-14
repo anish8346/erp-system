@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import AuditLogs from './pages/AuditLogs';
 import Config from './pages/Config';
 import Users from './pages/Users';
+import Customers from './pages/Customers';
 import Requests from './pages/Requests';
 import Vendors from './pages/Vendors';
 import LandingPage from './pages/LandingPage';
@@ -81,7 +82,10 @@ function App() {
             )}
 
             {canAccess(['SALES', 'OWNER']) && (
-              <NavItem to="/dashboard/sales" icon={<ShoppingCart className="w-4 h-4" />} label="Sales Orders" />
+              <>
+                <NavItem to="/dashboard/sales" icon={<ShoppingCart className="w-4 h-4" />} label="Sales Orders" />
+                <NavItem to="/dashboard/customers" icon={<UserPlus className="w-4 h-4" />} label="Customers" />
+              </>
             )}
 
             {canAccess(['PURCHASE', 'OWNER']) && (

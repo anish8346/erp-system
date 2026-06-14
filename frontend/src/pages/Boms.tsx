@@ -24,12 +24,13 @@ const Boms = () => {
     try {
       const [bomsRes, prodRes, wcRes] = await Promise.all([
         api.get('/boms').catch(() => ({ data: [] })),
-        api.get('/products').catch(() => ({ data: [] })),
+        api.get('/products').catch(() => ({ data: { products: [] } })),
         api.get('/config/work-centers').catch(() => ({ data: [] }))
       ]);
-      setBoms(bomsRes.data);
-      setProducts(prodRes.data);
-      setWorkCenters(wcRes.data);
+      
+      setBoms(Array.isArray(bomsRes.data) ? bomsRes.data : (bomsRes.data?.boms || []));
+      setProducts(Array.isArray(prodRes.data) ? prodRes.data : (prodRes.data?.products || []));
+      setWorkCenters(Array.isArray(wcRes.data) ? wcRes.data : (wcRes.data?.workCenters || wcRes.data || []));
     } catch (err) {
       console.error("Critical fetch error in Bill of Materials page", err);
     }

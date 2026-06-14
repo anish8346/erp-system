@@ -2,8 +2,8 @@ import { salesRepository } from '../repositories/sales.repository.js';
 import { logActivity } from '../../../core/utils/logger.js';
 import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem } from '../../../core/types/index.js';
 
-export const createSalesOrder = async (data: CreateSalesOrderData, userId?: string) => {
-  const { customerName, customerAddress, salesPersonId, orderLines } = data;
+export const createSalesOrder = async (data: CreateSalesOrderData & { customerId?: string }, userId?: string) => {
+  const { customerName, customerAddress, salesPersonId, orderLines, customerId } = data;
   if (!customerName || !orderLines?.length) {
     throw new Error('Customer name and at least one product are required.');
   }
@@ -15,7 +15,8 @@ export const createSalesOrder = async (data: CreateSalesOrderData, userId?: stri
     customerAddress, 
     salesPersonId, 
     orderLines, 
-    totalAmount 
+    totalAmount,
+    customerId
   });
 
   if (userId) {

@@ -26,7 +26,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [sales, products, mos, ledger] = await Promise.all([
+        const [salesRes, productsRes, mosRes, ledgerRes] = await Promise.all([
           api.get('/sales'),
           api.get('/products'),
           api.get('/manufacturing'),
@@ -38,22 +38,27 @@ const Dashboard = () => {
           setFinance(finRes.data);
         }
 
-        const confirmedSales = (sales.data || []).filter((s: SalesOrder) => s.status === 'CONFIRMED' || s.status === 'PARTIALLY_DELIVERED');
-        const lowStockItems = (products.data || []).filter((p: Product) => (p.qtyOnHand - p.qtyReserved) <= 0);
-        const activeMFG = (mos.data || []).filter((m: ManufacturingOrder) => m.status !== 'DONE');
+        const salesData = Array.isArray(salesRes.data) ? salesRes.data : (salesRes.data?.orders || []);
+        const productsData = Array.isArray(productsRes.data) ? productsRes.data : (productsRes.data?.products || []);
+        const mosData = Array.isArray(mosRes.data) ? mosRes.data : (mosRes.data?.mos || []);
+        const ledgerData = Array.isArray(ledgerRes.data) ? ledgerRes.data : (ledgerRes.data?.ledger || []);
+
+        const confirmedSales = salesData.filter((s: SalesOrder) => s.status === 'CONFIRMED' || s.status === 'PARTIALLY_DELIVERED');
+        const lowStockItems = productsData.filter((p: Product) => (p.qtyOnHand - p.qtyReserved) <= 0);
+        const activeMFG = mosData.filter((m: ManufacturingOrder) => m.status !== 'DONE');
 
         const delayedOrdersCount = confirmedSales.filter((s: SalesOrder) => {
           return new Date().getTime() - new Date(s.createdAt).getTime() > 2 * 24 * 60 * 60 * 1000;
         }).length;
 
         setStats({
-          totalSales: (sales.data || []).length,
+          totalSales: salesData.length,
           pendingDeliveries: confirmedSales.length,
           activeMOs: activeMFG.length,
           lowStock: lowStockItems.length,
           delayedOrders: delayedOrdersCount,
         });
-        setRecentLogs((ledger.data || []).slice(0, 5));
+        setRecentLogs(ledgerData.slice(0, 5));
       } catch (err) {
         console.error("Dashboard data fetch failed", err);
       } finally {
