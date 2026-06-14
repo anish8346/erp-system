@@ -25,6 +25,20 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Force fresh data and avoid 304 Not Modified
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  
+  // Strip caching headers from incoming request to force server to re-evaluate
+  delete req.headers['if-none-match'];
+  delete req.headers['if-modified-since'];
+  
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/products', productRouter);
