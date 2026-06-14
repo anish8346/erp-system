@@ -30,9 +30,9 @@ const Finance = () => {
     setLoading(true);
     try {
       const res = await api.get('/finance/summary', { params: filters });
-      setRecords(res.data.records);
-      setStats(res.data.stats);
-      setPagination(res.data.pagination);
+      setRecords(res.data.records || []);
+      setStats(res.data.stats || { income: res.data.totalRevenue || 0, expense: res.data.totalExpenses || 0, netProfit: res.data.netProfit || 0 });
+      setPagination(res.data.pagination || { page: 1, limit: 20, totalPages: 1, totalItems: 0 });
     } catch (err) {
       console.error("Failed to fetch finance data", err);
     } finally {
@@ -185,7 +185,7 @@ const Finance = () => {
             <tbody className="divide-y divide-gray-100">
                 {loading ? (
                     <tr><td colSpan={4} className="py-20 text-center text-gray-400 font-bold">Syncing ledger...</td></tr>
-                ) : records.map((r) => (
+                ) : records.length > 0 ? records.map((r) => (
                     <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4">
                             <span className="text-sm text-gray-600 font-medium">{new Date(r.date).toLocaleDateString()}</span>
@@ -205,7 +205,15 @@ const Finance = () => {
                             </span>
                         </td>
                     </tr>
-                ))}
+                )) : (
+                    <tr>
+                      <td colSpan={4} className="py-20 text-center">
+                        <Wallet className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                        <p className="text-warm-taupe/60 font-bold text-lg">No transactions found</p>
+                        <p className="text-warm-taupe/60 text-sm mt-1">Try adjusting your filters or log a manual entry.</p>
+                      </td>
+                    </tr>
+                )}
             </tbody>
           </table>
         </div>
