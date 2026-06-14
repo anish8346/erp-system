@@ -15,6 +15,18 @@ dotenv.config();
 
 const app = express();
 app.set('etag', false);
+
+// 1. FORCE NO-CACHE MIDDLEWARE (MUST BE AT TOP)
+app.use((req, res, next) => {
+  req.headers['if-none-match'] = '';
+  req.headers['if-modified-since'] = '';
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.removeHeader('ETag');
+  next();
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
@@ -24,20 +36,6 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 app.use(express.json());
-
-// Force fresh data and avoid 304 Not Modified
-app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-  
-  // Strip caching headers from incoming request to force server to re-evaluate
-  delete req.headers['if-none-match'];
-  delete req.headers['if-modified-since'];
-  
-  next();
-});
 
 // Routes
 app.use('/api/auth', authRouter);
