@@ -16,6 +16,7 @@ export class FinanceController {
       const result = await FinanceService.getSummary(filters);
       res.json(result);
     } catch (error: unknown) {
+      console.error('[FinanceSummary Error]:', error);
       res.status(500).json({ error: 'Failed to fetch financial summary.' });
     }
   }
@@ -40,6 +41,7 @@ export class FinanceController {
       const data = await FinanceService.getChartData();
       res.json(data);
     } catch (error: unknown) {
+      console.error('[FinanceCharts Error]:', error);
       res.status(500).json({ error: 'Failed to fetch chart data.' });
     }
   }

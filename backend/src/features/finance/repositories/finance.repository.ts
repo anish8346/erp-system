@@ -88,35 +88,38 @@ export class FinanceRepository {
   }
 
   static async getChartData() {
-    // 1. Get last 30 days of data grouped by date
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const dailyData = await prisma.financeRecord.groupBy({
-      by: ['date', 'type'],
-      where: {
-        date: { gte: thirtyDaysAgo }
-      },
-      _sum: { amount: true }
+    const [allRecords, categoryAggs] = await Promise.all([
+        prisma.financeRecord.findMany({
+            where: { date: { gte: thirtyDaysAgo } },
+            orderBy: { date: 'asc' }
+        }),
+        prisma.financeRecord.groupBy({
+            by: ['category', 'type'],
+            _sum: { amount: true }
+        })
+    ]);
+
+    const dailyMap: Record<string, { date: string, Income: number, Expense: number }> = {};
+    
+    allRecords.forEach(r => {
+        const dateStr = r.date.toISOString().split('T')[0];
+        if (!dailyMap[dateStr]) dailyMap[dateStr] = { date: dateStr, Income: 0, Expense: 0 };
+        
+        if (r.type === 'INCOME') dailyMap[dateStr].Income += r.amount || 0;
+        else dailyMap[dateStr].Expense += r.amount || 0;
     });
 
-    // 2. Get data grouped by category for pie charts
-    const categoryData = await prisma.financeRecord.groupBy({
-      by: ['category', 'type'],
-      _sum: { amount: true }
-    });
+    const daily = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
 
-    return {
-      daily: dailyData.map(d => ({
-        date: d.date.toISOString().split('T')[0],
-        type: d.type,
-        amount: d._sum.amount || 0
-      })),
-      categories: categoryData.map(c => ({
-        category: c.category,
-        type: c.type,
-        amount: c._sum.amount || 0
-      }))
-    };
+    const categories = categoryAggs.map(c => ({
+        name: c.category,
+        value: c._sum.amount || 0,
+        type: c.type
+    }));
+
+    return { daily, categories };
   }
 }

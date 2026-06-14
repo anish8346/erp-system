@@ -41,4 +41,18 @@ export class FinanceService {
   static async getChartData() {
     return await FinanceRepository.getChartData();
   }
+
+  /**
+   * Internal helper to log automatic financial entries from Sales/Purchase
+   */
+  static async logTransaction(data: {
+    type: 'INCOME' | 'EXPENSE';
+    category: 'SALES' | 'PURCHASE' | 'OTHER';
+    amount: number;
+    referenceId: string;
+    description: string;
+    date?: Date;
+  }) {
+    return await FinanceRepository.createRecord(data);
+  }
 }
