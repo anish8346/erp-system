@@ -18,6 +18,11 @@ const app = express();
 // --- CRITICAL: Aggressive Cache Disabling (to solve 304 misconceptions) ---
 app.disable('etag'); 
 app.use((req, res, next) => {
+  // Strip incoming conditional headers so Express/Middleware never sends 304
+  delete req.headers['if-none-match'];
+  delete req.headers['if-modified-since'];
+  
+  // Force response to never be cached
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');

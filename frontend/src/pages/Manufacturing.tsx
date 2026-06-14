@@ -61,9 +61,9 @@ const Manufacturing = () => {
       const userData = usersRes.data?.users || (Array.isArray(usersRes.data) ? usersRes.data : []);
       setUsers(userData);
     } catch (err) {
-      console.error(\"Detailed Fetch Error:\", err);
-      const msg = axios.isAxiosError(err) ? err.response?.data?.error || err.message : \"Network error\";
-      setErrorAlert({ title: \"Load Failed\", message: `Failed to load manufacturing data: ${msg}` });
+      console.error("Detailed Fetch Error:", err);
+      const msg = axios.isAxiosError(err) ? err.response?.data?.error || err.message : "Network error";
+      setErrorAlert({ title: "Load Failed", message: `Failed to load manufacturing data: ${msg}` });
     } finally {
       setLoading(false);
     }
