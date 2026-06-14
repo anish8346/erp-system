@@ -16,6 +16,7 @@ interface CreatePurchaseOrderInput {
   vendorAddress?: string;
   responsiblePersonId?: string;
   orderLines: PurchaseOrderLineInput[];
+  taxRate?: number;
 }
 
 interface ReceiveItemInput {
@@ -25,12 +26,18 @@ interface ReceiveItemInput {
 
 export class ProcurementService {
   static async createPurchaseOrder(data: CreatePurchaseOrderInput, userId?: string) {
-    const { vendorId, orderLines } = data;
+    const { vendorId, orderLines, taxRate = 0 } = data;
     if (!vendorId || !orderLines?.length) {
       throw new Error('Vendor and products are required for procurement.');
     }
 
-    const po = await ProcurementRepository.createPurchaseOrder(data);
+    const subtotal = orderLines.reduce((acc: number, line: PurchaseOrderLineInput) => acc + (Number(line.quantity) * Number(line.price)), 0);
+    const taxAmount = (subtotal * taxRate) / 100;
+
+    const po = await ProcurementRepository.createPurchaseOrder({
+        ...data,
+        taxAmount
+    });
 
     if (userId) {
       await logActivity(userId, 'CREATE', 'PURCHASE_ORDER', po.id, `Created procurement order ${po.id} in DRAFT status`);
@@ -97,11 +104,13 @@ export class ProcurementService {
         where: { purchaseOrderId: id }
       });
       
-      const totalAmount = allLines.reduce((acc, l) => acc + (l.quantity * l.price), 0);
+      const subtotal = allLines.reduce((acc, l) => acc + (l.quantity * l.price), 0);
+      const taxAmount = (subtotal * (po.taxRate || 0)) / 100;
+      const totalAmount = subtotal + taxAmount;
 
       await tx.purchaseOrder.update({
         where: { id },
-        data: { totalAmount }
+        data: { totalAmount, taxAmount }
       });
 
       // AUTOMATION: Update product cost price

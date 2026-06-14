@@ -83,6 +83,8 @@ model SalesOrder {
   salesPerson     User?               @relation(fields: [salesPersonId], references: [id])
   status          String              // DRAFT, NEGOTIATION, CONFIRMED, PARTIALLY_DELIVERED, DELIVERED, CANCELLED
   totalAmount     Float
+  taxRate         Float               @default(0)
+  taxAmount       Float               @default(0)
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   orderLines      SalesOrderLine[]
@@ -121,6 +123,8 @@ model PurchaseOrder {
   responsiblePerson   User?                  @relation("ResponsiblePerson", fields: [responsiblePersonId], references: [id])
   status              String                 // DRAFT, NEGOTIATION, CONFIRMED, PARTIALLY_RECEIVED, FULLY_RECEIVED, CANCELLED
   totalAmount         Float
+  taxRate             Float                  @default(0)
+  taxAmount           Float                  @default(0)
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
   orderLines          PurchaseOrderLine[]

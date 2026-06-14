@@ -2,8 +2,8 @@ import prisma from '../../../core/database/prisma.js';
 import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem, SalesOrderStatus, CreateMOData, CreatePOData, SalesOrder, SalesOrderLine } from '../../../core/types/index.js';
 
 export class SalesRepository {
-  async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number; customerId?: string }) {
-    const { customerName, customerAddress, salesPersonId, orderLines, totalAmount, customerId } = data;
+  async createSalesOrder(data: CreateSalesOrderData & { totalAmount: number; customerId?: string; taxRate?: number; taxAmount?: number }) {
+    const { customerName, customerAddress, salesPersonId, orderLines, totalAmount, customerId, taxRate, taxAmount } = data;
     return await prisma.salesOrder.create({
       data: {
         customerName,
@@ -12,6 +12,8 @@ export class SalesRepository {
         salesPersonId,
         status: 'DRAFT',
         totalAmount,
+        taxRate: taxRate || 0,
+        taxAmount: taxAmount || 0,
         orderLines: {
           create: orderLines.map((line: CreateSalesOrderLine) => ({
             productId: line.productId,
@@ -222,7 +224,7 @@ export class SalesRepository {
     });
   }
 
-  async updateSalesOrder(id: string, data: { status?: SalesOrderStatus, totalAmount?: number }) {
+  async updateSalesOrder(id: string, data: { status?: SalesOrderStatus, totalAmount?: number, taxRate?: number, taxAmount?: number }) {
     return await prisma.salesOrder.update({
       where: { id },
       data

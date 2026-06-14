@@ -13,12 +13,15 @@ interface CreatePurchaseOrderInput {
   vendorAddress?: string;
   responsiblePersonId?: string;
   orderLines: PurchaseOrderLineInput[];
+  taxRate?: number;
+  taxAmount?: number;
 }
 
 export class ProcurementRepository {
   static async createPurchaseOrder(data: CreatePurchaseOrderInput) {
-    const { vendorId, vendorName, vendorAddress, responsiblePersonId, orderLines } = data;
-    const totalAmount = orderLines.reduce((acc: number, line: PurchaseOrderLineInput) => acc + (Number(line.quantity) * Number(line.price)), 0);
+    const { vendorId, vendorName, vendorAddress, responsiblePersonId, orderLines, taxRate, taxAmount } = data;
+    const subtotal = orderLines.reduce((acc: number, line: PurchaseOrderLineInput) => acc + (Number(line.quantity) * Number(line.price)), 0);
+    const totalAmount = subtotal + (taxAmount || 0);
     
     return await prisma.purchaseOrder.create({
       data: {
@@ -28,6 +31,8 @@ export class ProcurementRepository {
         responsiblePersonId: responsiblePersonId && responsiblePersonId.trim() !== '' ? responsiblePersonId : undefined,
         status: 'DRAFT',
         totalAmount,
+        taxRate: taxRate || 0,
+        taxAmount: taxAmount || 0,
         orderLines: {
           create: orderLines.map((line: PurchaseOrderLineInput) => ({
             productId: line.productId,
@@ -102,10 +107,10 @@ export class ProcurementRepository {
       return await prisma.purchaseOrderLine.findUnique({ where: { id } });
   }
 
-  static async updatePurchaseOrder(id: string, data: Prisma.PurchaseOrderUpdateInput, tx: Prisma.TransactionClient = prisma) {
+  static async updatePurchaseOrder(id: string, data: Prisma.PurchaseOrderUpdateInput | { status?: string, totalAmount?: number, taxRate?: number, taxAmount?: number }, tx: Prisma.TransactionClient = prisma) {
       return await tx.purchaseOrder.update({
           where: { id },
-          data
+          data: data as any
       });
   }
 }

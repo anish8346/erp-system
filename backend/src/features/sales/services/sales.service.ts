@@ -5,13 +5,15 @@ import { AutomationService } from '../../../core/utils/automation.js';
 import { FinanceService } from '../../finance/services/finance.service.js';
 import type { CreateSalesOrderData, CreateSalesOrderLine, DeliverItem } from '../../../core/types/index.js';
 
-export const createSalesOrder = async (data: CreateSalesOrderData & { customerId?: string }, userId?: string) => {
-  const { customerName, customerAddress, salesPersonId, orderLines, customerId } = data;
+export const createSalesOrder = async (data: CreateSalesOrderData & { customerId?: string, taxRate?: number }, userId?: string) => {
+  const { customerName, customerAddress, salesPersonId, orderLines, customerId, taxRate = 0 } = data;
   if (!customerName || !orderLines?.length) {
     throw new Error('Customer name and at least one product are required.');
   }
   
-  const totalAmount = orderLines.reduce((acc: number, line: CreateSalesOrderLine) => acc + (line.quantity * line.price), 0);
+  const subtotal = orderLines.reduce((acc: number, line: CreateSalesOrderLine) => acc + (line.quantity * line.price), 0);
+  const taxAmount = (subtotal * taxRate) / 100;
+  const totalAmount = subtotal + taxAmount;
   
   const so = await salesRepository.createSalesOrder({ 
     customerName, 
@@ -19,6 +21,8 @@ export const createSalesOrder = async (data: CreateSalesOrderData & { customerId
     salesPersonId: salesPersonId && salesPersonId.trim() !== '' ? salesPersonId : undefined, 
     orderLines, 
     totalAmount,
+    taxRate,
+    taxAmount,
     customerId: customerId && customerId.trim() !== '' ? customerId : undefined
   });
 
@@ -132,11 +136,13 @@ export const updateNegotiatedPrice = async (id: string, lineId: string, newPrice
       where: { salesOrderId: id }
     });
     
-    const totalAmount = allLines.reduce((acc, l) => acc + (l.quantity * l.price), 0);
+    const subtotal = allLines.reduce((acc, l) => acc + (l.quantity * l.price), 0);
+    const taxAmount = (subtotal * (so.taxRate || 0)) / 100;
+    const totalAmount = subtotal + taxAmount;
 
     await tx.salesOrder.update({
       where: { id },
-      data: { totalAmount }
+      data: { totalAmount, taxAmount }
     });
 
     await logActivity(userId, 'UPDATE_PRICE', 'SALES_ORDER', id, `Updated sales price for a line item to ₹${newPrice}`);

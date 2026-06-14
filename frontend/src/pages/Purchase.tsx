@@ -33,6 +33,7 @@ const Purchase = () => {
     vendorId: '',
     vendorAddress: '',
     responsiblePersonId: '',
+    taxRate: 0,
     orderLines: [{ productId: '', quantity: 1, price: 0 }]
   });
 
@@ -105,6 +106,7 @@ const Purchase = () => {
       const response = await api.post('/purchase', {
         ...newOrder,
         vendorName: vendor?.name || 'Unknown',
+        taxRate: newOrder.taxRate || 0
       });
 
       const createdOrder = response.data;
@@ -121,6 +123,7 @@ const Purchase = () => {
         vendorId: '',
         vendorAddress: '',
         responsiblePersonId: '',
+        taxRate: 0,
         orderLines: [{ productId: '', quantity: 1, price: 0 }]
       });
       fetchData();
@@ -379,10 +382,35 @@ const Purchase = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-6 flex justify-end">
-                <div className="bg-luxury-brown text-white px-6 py-3 rounded-xl">
-                    <span className="text-sm opacity-80 font-medium mr-4">Total Amount:</span>
-                    <span className="text-xl font-bold">₹{calculateTotal(newOrder.orderLines).toLocaleString()}</span>
+
+            <div className="mt-8 flex flex-col items-end space-y-3 border-t border-soft-cream pt-6">
+                <div className="flex items-center gap-4">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tax (GST) %</label>
+                    <select 
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white font-bold text-luxury-brown w-32"
+                      value={newOrder.taxRate}
+                      onChange={(e) => setNewOrder({...newOrder, taxRate: Number(e.target.value)})}
+                    >
+                        <option value={0}>0% (Exempt)</option>
+                        <option value={18}>18% (Standard)</option>
+                    </select>
+                </div>
+
+                <div className="w-full max-w-[300px] space-y-2 bg-faded-white p-4 rounded-xl border border-soft-cream">
+                    <div className="flex justify-between items-center text-xs font-bold text-warm-taupe">
+                        <span>SUBTOTAL</span>
+                        <span>₹{calculateTotal(newOrder.orderLines).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs font-bold text-warm-taupe border-b border-gray-200 pb-2">
+                        <span>GST ({newOrder.taxRate}%)</span>
+                        <span>₹{(calculateTotal(newOrder.orderLines) * newOrder.taxRate / 100).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-luxury-brown pt-1">
+                        <span className="text-sm font-black uppercase tracking-widest">Grand Total</span>
+                        <span className="text-xl font-black">
+                            ₹{(calculateTotal(newOrder.orderLines) * (1 + newOrder.taxRate / 100)).toLocaleString()}
+                        </span>
+                    </div>
                 </div>
             </div>
           </Card>

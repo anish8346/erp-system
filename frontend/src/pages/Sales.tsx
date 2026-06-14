@@ -104,6 +104,7 @@ const Sales = () => {
         customerAddress: newOrder.customerAddress,
         customerId: newOrder.customerId,
         salesPersonId: newOrder.salesPersonId,
+        taxRate: newOrder.taxRate || 0,
         orderLines: [{
           productId: newOrder.productId,
           quantity: newOrder.quantity,
@@ -111,7 +112,7 @@ const Sales = () => {
         }]
       });
       setShowModal(false);
-      setNewOrder({ customerName: '', customerAddress: '', salesPersonId: '', productId: '', quantity: 1, customerId: undefined });
+      setNewOrder({ customerName: '', customerAddress: '', salesPersonId: '', productId: '', quantity: 1, customerId: undefined, taxRate: 0 });
       fetchData(1);
     } catch (err: unknown) {
       let errorMsg = "Failed to create sales order";

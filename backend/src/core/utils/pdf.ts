@@ -49,7 +49,13 @@ export class PDFService {
 
       // Footer
       doc.rect(50, y + 10, 500, 1).fill('#EEEEEE');
-      doc.fontSize(15).text(`Grand Total: ₹${so.totalAmount.toLocaleString()}`, 350, y + 30, { bold: true });
+      
+      const subtotal = so.orderLines.reduce((acc: any, l: any) => acc + (l.quantity * l.price), 0);
+      doc.fillColor('#444444').fontSize(10);
+      doc.text(`Subtotal: ₹${subtotal.toLocaleString()}`, 350, y + 25);
+      doc.text(`GST (${so.taxRate}%): ₹${so.taxAmount.toLocaleString()}`, 350, y + 40);
+      
+      doc.fontSize(15).text(`Grand Total: ₹${so.totalAmount.toLocaleString()}`, 350, y + 60, { bold: true });
 
       doc.fontSize(10).text('Thank you for choosing Shiv Furniture Works!', 50, 700, { align: 'center', width: 500 });
       
@@ -98,7 +104,12 @@ export class PDFService {
       });
 
       // Total
-      doc.fontSize(15).text(`Total Amount: ₹${po.totalAmount.toLocaleString()}`, 350, y + 30, { bold: true });
+      const subtotal = po.orderLines.reduce((acc: any, l: any) => acc + (l.quantity * l.price), 0);
+      doc.fillColor('#444444').fontSize(10);
+      doc.text(`Subtotal: ₹${subtotal.toLocaleString()}`, 350, y + 25);
+      doc.text(`GST (${po.taxRate}%): ₹${po.taxAmount.toLocaleString()}`, 350, y + 40);
+      
+      doc.fontSize(15).text(`Total Amount: ₹${po.totalAmount.toLocaleString()}`, 350, y + 60, { bold: true });
 
       doc.end();
     });

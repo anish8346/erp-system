@@ -17,6 +17,7 @@ interface SalesFormProps {
     productId: string;
     quantity: number;
     customerId?: string;
+    taxRate?: number;
   };
   setNewOrder: React.Dispatch<React.SetStateAction<{
     customerName: string;
@@ -25,6 +26,7 @@ interface SalesFormProps {
     productId: string;
     quantity: number;
     customerId?: string;
+    taxRate?: number;
   }>>;
   products: Product[];
   users: User[];
@@ -117,6 +119,7 @@ const SalesForm = ({
               </p>
             )}
           </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input 
             label="Quantity *" 
             type="number"
@@ -125,13 +128,35 @@ const SalesForm = ({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOrder({...newOrder, quantity: Number(e.target.value)})}
             required
           />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-gray-700 ml-1">Tax (GST) *</label>
+            <select 
+              className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-luxury-brown/10 focus:border-luxury-brown outline-none transition-all bg-white text-sm font-medium"
+              value={newOrder.taxRate || 0}
+              onChange={(e) => setNewOrder({...newOrder, taxRate: Number(e.target.value)})}
+              required
+            >
+              <option value={0}>0% (Tax Exempt)</option>
+              <option value={18}>18% (Standard GST)</option>
+            </select>
+          </div>
         </div>
 
-        <div className="bg-faded-white p-4 rounded-xl border border-soft-cream flex justify-between items-center">
-           <span className="text-xs font-bold text-warm-taupe uppercase tracking-widest">Estimated Total</span>
-           <span className="text-xl font-black text-luxury-brown">
-              ₹{((selectedProduct?.salesPrice || 0) * newOrder.quantity).toLocaleString()}
-           </span>
+        <div className="bg-faded-white p-4 rounded-xl border border-soft-cream space-y-2">
+           <div className="flex justify-between items-center text-warm-taupe">
+              <span className="text-[10px] font-bold uppercase tracking-widest">Subtotal</span>
+              <span className="text-sm font-bold">₹{((selectedProduct?.salesPrice || 0) * newOrder.quantity).toLocaleString()}</span>
+           </div>
+           <div className="flex justify-between items-center text-warm-taupe border-b border-gray-200 pb-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest">GST ({newOrder.taxRate || 0}%)</span>
+              <span className="text-sm font-bold">₹{(((selectedProduct?.salesPrice || 0) * newOrder.quantity) * (newOrder.taxRate || 0) / 100).toLocaleString()}</span>
+           </div>
+           <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-warm-taupe uppercase tracking-widest">Grand Total</span>
+              <span className="text-xl font-black text-luxury-brown">
+                  ₹{(((selectedProduct?.salesPrice || 0) * newOrder.quantity) * (1 + (newOrder.taxRate || 0) / 100)).toLocaleString()}
+              </span>
+           </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
